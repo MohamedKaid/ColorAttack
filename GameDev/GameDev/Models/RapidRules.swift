@@ -35,10 +35,12 @@ struct RapidRules: ModeRules {
         score: Int
     ) -> Bool {
         switch action {
+        case .colorTap(let tappedColor):
+            return tappedColor.name == prompt.text
         case .noTap:
             return false
-        case .tap(let tappedColor):
-            return tappedColor.name == prompt.text
+        case .shapeTap:
+            return false
         }
     }
 

@@ -40,7 +40,7 @@ struct ClassicModeView: View {
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(engine.gridColors) { gameColor in
                         Button {
-                            engine.handleTap(on: gameColor)
+                            engine.handleTap(action: .colorTap(gameColor))
                         } label: {
                             CardView(gameColor: gameColor)
                         }

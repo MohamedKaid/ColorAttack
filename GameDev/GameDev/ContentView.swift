@@ -106,6 +106,43 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
                 .buttonStyle(.borderedProminent)
+                
+                NavigationLink {
+                    ChaosModeView(
+                        engine: GameEngine(
+                            lives: Lives(max: 5), // Chaos is harder
+                            colorPool: colorPool,
+                            config: ModeConfig(
+                                cardsPerGrid: 6,
+                                tapTimeLimit: 2.5,
+                                usesLives: true
+                            ),
+                            rules: ChaosRules()
+                        )
+                    )
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.title3)
+
+                        Text("CHAOS")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .tracking(1)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.vertical, 14)
+                    .padding(.horizontal, 28)
+                    .background(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+                }
+                .buttonStyle(.plain)
 
             }
             .font(.title2)

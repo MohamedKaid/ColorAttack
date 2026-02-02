@@ -37,12 +37,21 @@ struct ModeConfig {
 /// What the player did this round (generic).
 enum PlayerAction {
     case noTap
-    case tap(GameColor)
+
+    // Classic / Rapid
+    case colorTap(GameColor)
+
+    // Chaos
+    case shapeTap(GameShape)
 }
 
 /// What the engine is asking the player to do (generic).
 struct Prompt {
     var text: String
+}
+
+protocol TimingRules {
+    func tapTimeLimit(for round: Int) -> TimeInterval
 }
 
 /// Behavior contract: each mode can decide prompts + correctness + scoring + reshuffle.
@@ -101,6 +110,10 @@ final class GameEngine: ObservableObject {
     private var promptTask: Task<Void, Never>?
     private var gameTimerTask: Task<Void, Never>?
     private var currentPrompt = Prompt(text: "?")
+    // Chaos multi-action support
+    private var requiredActionsThisRound: Int = 1
+    private var actionsTakenThisRound: Int = 0
+    private var allActionsCorrectThisRound: Bool = true
 
     // MARK: - Init
     init(
@@ -152,17 +165,51 @@ final class GameEngine: ObservableObject {
 
     // MARK: - Player Input
 
-    func handleTap(on color: GameColor) {
+//    func handleTap(on color: GameColor) {
+//        guard !isGameOver else { return }
+//        guard !hasRespondedThisRound else { return }
+//
+//        hasRespondedThisRound = true
+//        stopPromptTimerOnly()
+//
+//        let action: PlayerAction = .tap(color)
+//
+//        if let rules {
+//            let correct = rules.isCorrect(
+//                action: action,
+//                prompt: currentPrompt,
+//                grid: gridColors,
+//                switchOn: switchOn,
+//                round: round,
+//                score: score
+//            )
+//
+//            score += rules.scoreDelta(isCorrect: correct)
+//
+//            if !correct && config.usesLives {
+//                lives.lose()
+//            }
+//        } else {
+//            // TEMP fallback (if you ever run without rules)
+//            score += 10
+//        }
+//
+//        if config.usesLives, lives.isEmpty {
+//            isGameOver = true
+//            stop()
+//            return
+//        }
+//
+//        proceed()
+//    }
+    
+    func handleTap(action: PlayerAction) {
         guard !isGameOver else { return }
-        guard !hasRespondedThisRound else { return }
 
-        hasRespondedThisRound = true
-        stopPromptTimerOnly()
-
-        let action: PlayerAction = .tap(color)
+        let correct: Bool
 
         if let rules {
-            let correct = rules.isCorrect(
+            correct = rules.isCorrect(
                 action: action,
                 prompt: currentPrompt,
                 grid: gridColors,
@@ -170,24 +217,37 @@ final class GameEngine: ObservableObject {
                 round: round,
                 score: score
             )
+        } else {
+            correct = true
+        }
 
-            score += rules.scoreDelta(isCorrect: correct)
+        allActionsCorrectThisRound =
+            allActionsCorrectThisRound && correct
 
-            if !correct && config.usesLives {
+        actionsTakenThisRound += 1
+
+        if actionsTakenThisRound >= requiredActionsThisRound {
+            finalizeRound()
+        }
+    }
+    
+    private func finalizeRound() {
+        stopPromptTimerOnly()
+
+        if let rules {
+            score += rules.scoreDelta(isCorrect: allActionsCorrectThisRound)
+
+            if !allActionsCorrectThisRound && config.usesLives {
                 lives.lose()
             }
-        } else {
-            // TEMP fallback (if you ever run without rules)
-            score += 10
         }
 
         if config.usesLives, lives.isEmpty {
             isGameOver = true
             stop()
-            return
+        } else {
+            proceed()
         }
-
-        proceed()
     }
 
     // MARK: - Core Loop
@@ -227,6 +287,11 @@ final class GameEngine: ObservableObject {
 
         round += 1
         hasRespondedThisRound = false
+        actionsTakenThisRound = 0
+        allActionsCorrectThisRound = true
+
+        // Chaos requires two actions per round
+        requiredActionsThisRound = rules is ChaosRules ? 2 : 1
 
         rebuildGridIfNeeded(force: false)
 
@@ -261,8 +326,9 @@ final class GameEngine: ObservableObject {
         stopPromptTimerOnly()
 
         let timeLimit: TimeInterval
-        if let classicRules = rules as? ClassicRules {
-            timeLimit = classicRules.tapTimeLimit(for: round)
+
+        if let timingRules = rules as? TimingRules {
+            timeLimit = timingRules.tapTimeLimit(for: round)
         } else {
             timeLimit = config.tapTimeLimit
         }
@@ -296,38 +362,15 @@ final class GameEngine: ObservableObject {
 
     private func handleTimeout() {
         guard !isGameOver else { return }
-        guard !hasRespondedThisRound else { return }
 
-        let action: PlayerAction = .noTap
+        let missingActions = requiredActionsThisRound - actionsTakenThisRound
 
-        if let rules {
-            let correct = rules.isCorrect(
-                action: action,
-                prompt: currentPrompt,
-                grid: gridColors,
-                switchOn: switchOn,
-                round: round,
-                score: score
-            )
-
-            score += rules.scoreDelta(isCorrect: correct)
-
-            if !correct && config.usesLives {
-                lives.lose()
-            }
-        } else {
-            // fallback: timeout wrong
-            if config.usesLives { lives.lose() }
-        }
-
-        if config.usesLives, lives.isEmpty {
-            isGameOver = true
-            stop()
-        } else {
-            proceed()
+        if missingActions > 0 {
+            allActionsCorrectThisRound = false
+            actionsTakenThisRound = requiredActionsThisRound
+            finalizeRound()
         }
     }
-
     // MARK: - Game Timer (total time limit)
 
     private func startGameTimerIfNeeded() {

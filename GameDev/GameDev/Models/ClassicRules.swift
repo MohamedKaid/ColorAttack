@@ -14,7 +14,7 @@
 
 import SwiftUI
 
-struct ClassicRules: ModeRules {
+struct ClassicRules: ModeRules, TimingRules{
     
     // How many rounds before we add more colors
     private let difficultyStep = 15
@@ -107,19 +107,19 @@ struct ClassicRules: ModeRules {
         }
         
         switch action {
-            
-        case .tap(let tappedColor):
+
+        case .colorTap(let tappedColor):
             if switchOn {
-                // DON'T TAP target
                 return tappedColor.name != targetName
             } else {
-                // TAP target
                 return tappedColor.name == targetName
             }
-            
+
         case .noTap:
-            // Correct ONLY if instruction was DON'T TAP
             return switchOn
+
+        case .shapeTap:
+            return false
         }
     }
     

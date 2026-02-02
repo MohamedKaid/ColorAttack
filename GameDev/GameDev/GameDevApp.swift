@@ -6,12 +6,27 @@
 //
 
 import SwiftUI
+import GameKit
 
 @main
 struct GameDevApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
+    init() {
+            authenticateGameCenter()
         }
-    }
+
+        var body: some Scene {
+            WindowGroup {
+                ContentView()
+            }
+        }
+
+        private func authenticateGameCenter() {
+            GKLocalPlayer.local.authenticateHandler = { _, error in
+                if let error = error {
+                    print("Game Center auth error:", error.localizedDescription)
+                } else {
+                    print("\(GKLocalPlayer.local.alias) is ready to play!")
+                }
+            }
+        }
 }

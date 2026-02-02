@@ -35,6 +35,26 @@ struct ChaosModeView: View {
                 // Split Screen
                 HStack(spacing: 24) {
 
+                    // MARK: - Colors Side
+                    VStack(spacing: 12) {
+                        Text("COLORS")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+
+                        LazyVGrid(columns: colorColumns, spacing: 16) {
+                            ForEach(engine.gridColors) { gameColor in
+                                Button {
+                                    engine.handleTap(action: .colorTap(gameColor))
+                                } label: {
+                                    CardView(gameColor: gameColor)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(engine.isGameOver)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    
                     // MARK: - Shapes Side
                     VStack(spacing: 12) {
                         Text("SHAPES")
@@ -57,25 +77,6 @@ struct ChaosModeView: View {
 
                     Divider()
 
-                    // MARK: - Colors Side
-                    VStack(spacing: 12) {
-                        Text("COLORS")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-
-                        LazyVGrid(columns: colorColumns, spacing: 16) {
-                            ForEach(engine.gridColors) { gameColor in
-                                Button {
-                                    engine.handleTap(action: .colorTap(gameColor))
-                                } label: {
-                                    CardView(gameColor: gameColor)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(engine.isGameOver)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal)
                 .frame(maxWidth: 1200)

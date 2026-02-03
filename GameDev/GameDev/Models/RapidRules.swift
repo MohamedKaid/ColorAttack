@@ -7,8 +7,10 @@
 
 import SwiftUI
 
-struct RapidRules: ModeRules {
+final class RapidRules: ModeRules {
 
+    private var lastTargetName: String? = nil
+    
     // Rapid: always a fixed grid (6 cards from config), no special reshuffle logic
     func makeGrid(from pool: [GameColor], cardsPerGrid: Int, round: Int, score: Int) -> [GameColor] {
         Array(pool.shuffled().prefix(cardsPerGrid))
@@ -21,8 +23,18 @@ struct RapidRules: ModeRules {
         grid: [GameColor],
         pool: [GameColor]
     ) -> (prompt: Prompt, switchOn: Bool) {
-        let called = grid.randomElement()?.name ?? "?"
-        return (Prompt(text: called), false)
+
+        var candidates = grid.map { $0.name }
+
+        // ✅ Remove last target if possible
+        if let last = lastTargetName, candidates.count > 1 {
+            candidates.removeAll { $0 == last }
+        }
+
+        let chosen = candidates.randomElement() ?? "?"
+        lastTargetName = chosen
+
+        return (Prompt(text: chosen), false)
     }
 
     // Rapid: correct = tap the called color. Timeout/noTap = wrong.

@@ -48,6 +48,7 @@ enum PlayerAction {
 /// What the engine is asking the player to do (generic).
 struct Prompt {
     var text: String
+    var displayColor: GameColor? = nil
 }
 
 protocol TimingRules {
@@ -100,6 +101,8 @@ final class GameEngine: ObservableObject {
     @Published private(set) var score: Int = 0
     @Published private(set) var round: Int = 0
     @Published private(set) var remainingTapTime: TimeInterval = 0
+    @Published private(set) var gridShapes: [GameShape] = []
+    @Published private(set) var shouldShuffleShapes: Bool = false
 
 
     /// For timed modes (Rapid): counts down to 0. Nil means "not timed".
@@ -109,7 +112,7 @@ final class GameEngine: ObservableObject {
     private var hasRespondedThisRound = false
     private var promptTask: Task<Void, Never>?
     private var gameTimerTask: Task<Void, Never>?
-    private var currentPrompt = Prompt(text: "?")
+    @Published private(set) var currentPrompt = Prompt(text: "?")
     // Chaos multi-action support
     private var requiredActionsThisRound: Int = 1
     private var actionsTakenThisRound: Int = 0
@@ -296,6 +299,24 @@ final class GameEngine: ObservableObject {
         rebuildGridIfNeeded(force: false)
 
         var lastPromptText: String = ""
+        
+        // Chaos spatial difficulty
+        if rules is ChaosRules {
+            switch round {
+            case 0..<10:
+                shouldShuffleShapes = false
+            case 10..<20:
+                shouldShuffleShapes = round % 3 == 0
+            default:
+                shouldShuffleShapes = true
+            }
+
+            if shouldShuffleShapes {
+                gridShapes = GameShape.allCases.shuffled()
+            } else if gridShapes.isEmpty {
+                gridShapes = GameShape.allCases
+            }
+        }
 
         if let rules {
             let result = rules.makePrompt(round: round, score: score, grid: gridColors, pool: colorPool)

@@ -21,21 +21,28 @@ struct ClassicModeView: View {
 
                 Spacer(minLength: 12)
 
-                // Prompt (centered & dominant)
+                // OPTION B: Neutral background when Stroop is active
+                let isStroop = engine.currentPrompt.displayColor != nil
+
                 Text(engine.promptText.uppercased())
                     .font(.largeTitle)
                     .bold()
+                    .foregroundColor(
+                        engine.currentPrompt.displayColor?.color ?? .primary
+                    )
                     .padding(.vertical, 12)
                     .padding(.horizontal, 28)
                     .background(
                         RoundedRectangle(cornerRadius: 14)
                             .fill(
-                                engine.switchOn
-                                ? Color.red.opacity(0.25)
-                                : Color.blue.opacity(0.25)
+                                isStroop
+                                ? Color.white.opacity(0.75)
+                                : engine.switchOn
+                                    ? Color.red.opacity(0.25)
+                                    : Color.blue.opacity(0.25)
                             )
                     )
-
+                
                 // Grid
                 LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(engine.gridColors) { gameColor in

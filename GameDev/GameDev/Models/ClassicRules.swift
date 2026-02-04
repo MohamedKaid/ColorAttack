@@ -27,10 +27,10 @@ final class ClassicRules: ModeRules, TimingRules{
     private let switchChance: Double = 0.3
     
     /// Round when Stroop effect starts
-    private let stroopStartRound = 5
+    private let stroopStartRound = 15
 
     /// Chance (0–1) that Stroop is applied once unlocked
-    private let stroopChance: Double = 0.9
+    private let stroopChance: Double = 0.4
     
     /// Chance that a "DON'T TAP" prompt uses a color NOT on the grid
     private let offGridChance: Double = 0.3

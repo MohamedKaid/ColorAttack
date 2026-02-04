@@ -8,19 +8,14 @@
 import SwiftUI
 import Combine
 
-// MARK: - Universal Mode Types
 
-/// Pure "numbers + limits" for a mode (no logic).
+// Setting Configurations for a Mode
 struct ModeConfig {
     var cardsPerGrid: Int
     var tapTimeLimit: TimeInterval
-
-    /// Does this mode use lives? (Rapid = false)
     var usesLives: Bool
-
-    /// Total game time limit in seconds (Rapid = 120, others = nil)
     var totalGameTimeLimit: TimeInterval?
-
+    // Default Value during initialization
     init(
         cardsPerGrid: Int = 6,
         tapTimeLimit: TimeInterval = 1.0,
@@ -34,28 +29,25 @@ struct ModeConfig {
     }
 }
 
-/// What the player did this round (generic).
+// A player's action in a round
 enum PlayerAction {
     case noTap
-
-    // Classic / Rapid
     case colorTap(GameColor)
-
-    // Chaos
     case shapeTap(GameShape)
 }
 
-/// What the engine is asking the player to do (generic).
+// Prompt Given to the user
 struct Prompt {
     var text: String
     var displayColor: GameColor? = nil
 }
 
+// The amount of time a user has to tap
 protocol TimingRules {
     func tapTimeLimit(for round: Int) -> TimeInterval
 }
 
-/// Behavior contract: each mode can decide prompts + correctness + scoring + reshuffle.
+// Format to create rules for each game
 protocol ModeRules {
     func makeGrid(from pool: [GameColor], cardsPerGrid: Int, round: Int, score: Int) -> [GameColor]
 
@@ -80,20 +72,16 @@ protocol ModeRules {
     func shouldReshuffle(round: Int, score: Int) -> Bool
 }
 
-// MARK: - Game Engine
-
 @MainActor
 final class GameEngine: ObservableObject {
 
-    // MARK: - Dependencies
+    // Game engine variables
     let lives: Lives
     let colorPool: [GameColor]
-
-    // MARK: - Mode Plug-ins
     let config: ModeConfig
     let rules: (any ModeRules)?
 
-    // MARK: - Game State (UI reads these)
+    // Individual Game variables
     @Published private(set) var gridColors: [GameColor] = []
     @Published private(set) var promptText: String = ""
     @Published private(set) var switchOn: Bool = false
@@ -103,12 +91,9 @@ final class GameEngine: ObservableObject {
     @Published private(set) var remainingTapTime: TimeInterval = 0
     @Published private(set) var gridShapes: [GameShape] = []
     @Published private(set) var shouldShuffleShapes: Bool = false
-
-
-    /// For timed modes (Rapid): counts down to 0. Nil means "not timed".
     @Published private(set) var remainingGameTime: TimeInterval? = nil
 
-    // MARK: - Internal State
+    //Internal Game variables
     private var hasRespondedThisRound = false
     private var promptTask: Task<Void, Never>?
     private var gameTimerTask: Task<Void, Never>?
@@ -118,7 +103,7 @@ final class GameEngine: ObservableObject {
     private var actionsTakenThisRound: Int = 0
     private var allActionsCorrectThisRound: Bool = true
 
-    // MARK: - Init
+    //Initialize Game
     init(
         lives: Lives,
         colorPool: [GameColor],
@@ -136,7 +121,6 @@ final class GameEngine: ObservableObject {
         gameTimerTask?.cancel()
     }
 
-    // MARK: - Lifecycle
 
     func start() {
         stop()
@@ -154,6 +138,7 @@ final class GameEngine: ObservableObject {
         nextRound()
     }
 
+    //Clear and stops giving prompts
     func stop() {
         promptTask?.cancel()
         promptTask = nil
@@ -162,50 +147,12 @@ final class GameEngine: ObservableObject {
         gameTimerTask = nil
     }
 
+    //restart game
     func restart() {
         start()
     }
-
-    // MARK: - Player Input
-
-//    func handleTap(on color: GameColor) {
-//        guard !isGameOver else { return }
-//        guard !hasRespondedThisRound else { return }
-//
-//        hasRespondedThisRound = true
-//        stopPromptTimerOnly()
-//
-//        let action: PlayerAction = .tap(color)
-//
-//        if let rules {
-//            let correct = rules.isCorrect(
-//                action: action,
-//                prompt: currentPrompt,
-//                grid: gridColors,
-//                switchOn: switchOn,
-//                round: round,
-//                score: score
-//            )
-//
-//            score += rules.scoreDelta(isCorrect: correct)
-//
-//            if !correct && config.usesLives {
-//                lives.lose()
-//            }
-//        } else {
-//            // TEMP fallback (if you ever run without rules)
-//            score += 10
-//        }
-//
-//        if config.usesLives, lives.isEmpty {
-//            isGameOver = true
-//            stop()
-//            return
-//        }
-//
-//        proceed()
-//    }
     
+    // Checks to see if action taken this round was correct
     func handleTap(action: PlayerAction) {
         guard !isGameOver else { return }
 
@@ -234,6 +181,7 @@ final class GameEngine: ObservableObject {
         }
     }
     
+    // Stops timer, updates score, checks status
     private func finalizeRound() {
         stopPromptTimerOnly()
 
@@ -253,8 +201,7 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // MARK: - Core Loop
-
+    //
     private func rebuildGridIfNeeded(force: Bool) {
         if force {
             buildGrid()
@@ -266,6 +213,7 @@ final class GameEngine: ObservableObject {
         }
     }
 
+    // Build a grid
     private func buildGrid() {
         if let rules {
             gridColors = rules.makeGrid(
@@ -279,6 +227,7 @@ final class GameEngine: ObservableObject {
         }
     }
 
+    // 
     private func nextRound() {
         guard !isGameOver else { return }
 
@@ -341,8 +290,7 @@ final class GameEngine: ObservableObject {
         startPromptTimer()
     }
 
-    // MARK: - Prompt Timer (tap time limit)
-
+    // starts prompt timer
     private func startPromptTimer() {
         stopPromptTimerOnly()
 
@@ -369,18 +317,19 @@ final class GameEngine: ObservableObject {
                     return
                 }
 
-                // update ~10x per second (smooth but cheap)
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }
         }
     }
 
+    // Reset Prompt Timer
     private func stopPromptTimerOnly() {
         promptTask?.cancel()
         promptTask = nil
         remainingTapTime = 0
     }
 
+    // Handling a missed tap
     private func handleTimeout() {
         guard !isGameOver else { return }
 
@@ -392,8 +341,8 @@ final class GameEngine: ObservableObject {
             finalizeRound()
         }
     }
-    // MARK: - Game Timer (total time limit)
 
+    // start the timer on the game
     private func startGameTimerIfNeeded() {
         gameTimerTask?.cancel()
         gameTimerTask = nil
@@ -419,14 +368,12 @@ final class GameEngine: ObservableObject {
                     return
                 }
 
-                // update twice per second (smooth enough for UI)
                 try? await Task.sleep(nanoseconds: 500_000_000)
             }
         }
     }
 
-    // MARK: - Round Advance
-
+    // Advance the round
     private func proceed() {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 250_000_000)

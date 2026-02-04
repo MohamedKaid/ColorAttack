@@ -14,7 +14,7 @@
 
 import SwiftUI
 
-struct ClassicRules: ModeRules, TimingRules{
+final class ClassicRules: ModeRules, TimingRules{
     
     // How many rounds before we add more colors
     private let difficultyStep = 15
@@ -26,11 +26,19 @@ struct ClassicRules: ModeRules, TimingRules{
     // Probability of it switching
     private let switchChance: Double = 0.3
     
+    /// Round when Stroop effect starts
+    private let stroopStartRound = 15
+
+    /// Chance (0–1) that Stroop is applied once unlocked
+    private let stroopChance: Double = 0.4
+    
     /// Chance that a "DON'T TAP" prompt uses a color NOT on the grid
     private let offGridChance: Double = 0.3
 
     /// Minimum round before off-grid prompts are allowed
     private let offGridStartRound = 1000000000
+    
+    private var lastTargetName: String? = nil
     
     // MARK: - Grid
     
@@ -72,25 +80,48 @@ struct ClassicRules: ModeRules, TimingRules{
             round >= offGridStartRound &&
             Double.random(in: 0...1) < offGridChance
 
-        let targetName: String
+        // ✅ NEW: candidate selection with no-repeat logic
+        var candidates: [String]
 
         if useOffGrid {
             // Pick a color NOT in the grid
             let gridNames = Set(grid.map { $0.name })
-            let offGridColors = pool.filter { !gridNames.contains($0.name) }
-            targetName = offGridColors.randomElement()?.name ?? grid.randomElement()?.name ?? "?"
+            candidates = pool
+                .map { $0.name }
+                .filter { !gridNames.contains($0) }
         } else {
-            // Normal on-grid target
-            targetName = grid.randomElement()?.name ?? "?"
+            // Normal on-grid candidates
+            candidates = grid.map { $0.name }
         }
+
+        // ✅ Remove last target if possible
+        if let last = lastTargetName, candidates.count > 1 {
+            candidates.removeAll { $0 == last }
+        }
+
+        let targetName = candidates.randomElement() ?? "?"
+        lastTargetName = targetName   // ✅ remember for next round
 
         let text = switchOn
             ? "DON'T TAP \(targetName.uppercased())"
             : "TAP \(targetName.uppercased())"
 
-        return (Prompt(text: text), switchOn)
+        var displayColor: GameColor? = nil
+
+        // ✅ Stroop effect (later game only)
+        if round >= stroopStartRound,
+           Double.random(in: 0...1) < stroopChance {
+
+            // Pick a DIFFERENT color than the target
+            let otherColors = pool.filter { $0.name.uppercased() != targetName.uppercased() }
+            displayColor = otherColors.randomElement()
+        }
+
+        return (
+            Prompt(text: text, displayColor: displayColor),
+            switchOn
+        )
     }
-    
     // MARK: - Correctness
     
     func isCorrect(

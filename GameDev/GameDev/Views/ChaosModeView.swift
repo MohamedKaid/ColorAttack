@@ -10,6 +10,9 @@ import SwiftUI
 struct ChaosModeView: View {
     @StateObject var engine: GameEngine
 
+    // Swap state (locked per round)
+    @State private var swapSides = false
+
     private let colorColumns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
         count: 3
@@ -28,65 +31,29 @@ struct ChaosModeView: View {
 
                 Spacer(minLength: 12)
 
-                // ✅ UPDATED: Color-coded Chaos instructions
+                // Instructions
                 ChaosInstructionView(text: engine.promptText)
                     .padding(.top)
 
-                // Split Screen
+                // Split Screen (with optional swap)
                 HStack(spacing: 24) {
-
-                    // MARK: - Colors Side
-                    VStack(spacing: 12) {
-                        Text("COLORS")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-
-                        LazyVGrid(columns: colorColumns, spacing: 16) {
-                            ForEach(engine.gridColors) { gameColor in
-                                Button {
-                                    engine.handleTap(action: .colorTap(gameColor))
-                                } label: {
-                                    CardView(gameColor: gameColor)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(engine.isGameOver)
-                            }
-                        }
+                    if swapSides {
+                        shapesColumn
+                        colorsColumn
+                    } else {
+                        colorsColumn
+                        shapesColumn
                     }
-                    .frame(maxWidth: .infinity)
-                    
-                    // MARK: - Shapes Side
-                    VStack(spacing: 12) {
-                        Text("SHAPES")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-
-                        LazyVGrid(columns: shapeColumns, spacing: 16) {
-                            ForEach(GameShape.allCases) { shape in
-                                Button {
-                                    engine.handleTap(action: .shapeTap(shape))
-                                } label: {
-                                    ShapeCardView(shape: shape)
-                                }
-                                .buttonStyle(.plain)
-                                .disabled(engine.isGameOver)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    Divider()
-
                 }
                 .padding(.horizontal)
                 .frame(maxWidth: 1200)
+                .animation(.easeInOut(duration: 0.25), value: swapSides)
 
                 Spacer()
             }
 
             // MARK: - Top Right HUD
             VStack(alignment: .trailing, spacing: 10) {
-
                 Text("SCORE")
                     .font(.headline)
                     .foregroundColor(.secondary)
@@ -145,6 +112,59 @@ struct ChaosModeView: View {
         .navigationTitle("Chaos")
         .onAppear { engine.start() }
         .onDisappear { engine.stop() }
+
+        // Decide side swap once per round
+        .onChange(of: engine.round) {
+            if engine.round >= 12 {
+                swapSides = Bool.random()
+            } else {
+                swapSides = false
+            }
+        }
+    }
+
+    // MARK: - Columns
+
+    private var colorsColumn: some View {
+        VStack(spacing: 12) {
+            Text("COLORS")
+                .font(.headline)
+                .foregroundColor(.secondary)
+
+            LazyVGrid(columns: colorColumns, spacing: 16) {
+                ForEach(engine.gridColors) { gameColor in
+                    Button {
+                        engine.handleTap(action: .colorTap(gameColor))
+                    } label: {
+                        CardView(gameColor: gameColor)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(engine.isGameOver)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var shapesColumn: some View {
+        VStack(spacing: 12) {
+            Text("SHAPES")
+                .font(.headline)
+                .foregroundColor(.secondary)
+
+            LazyVGrid(columns: shapeColumns, spacing: 16) {
+                ForEach(engine.gridShapes) { shape in
+                    Button {
+                        engine.handleTap(action: .shapeTap(shape))
+                    } label: {
+                        ShapeCardView(shape: shape)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(engine.isGameOver)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

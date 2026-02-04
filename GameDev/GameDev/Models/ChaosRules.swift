@@ -7,10 +7,13 @@
 
 import SwiftUI
 
-struct ChaosRules: ModeRules, TimingRules {
+final class ChaosRules: ModeRules, TimingRules {
 
     // Track required targets for the round
     private let shapes = GameShape.allCases
+    
+    private var lastColorTarget: String? = nil
+    private var lastShapeTarget: String? = nil
 
     func makeGrid(
         from pool: [GameColor],
@@ -28,10 +31,27 @@ struct ChaosRules: ModeRules, TimingRules {
         pool: [GameColor]
     ) -> (prompt: Prompt, switchOn: Bool) {
 
-        let color = grid.randomElement()!.name.uppercased()
-        let shape = shapes.randomElement()!.rawValue.uppercased()
+        // MARK: - Color selection (no back-to-back repeats)
+        var colorCandidates = grid.map { $0.name.uppercased() }
 
-        //  Step 3: Reduce DON'T TAP early
+        if let last = lastColorTarget, colorCandidates.count > 1 {
+            colorCandidates.removeAll { $0 == last }
+        }
+
+        let color = colorCandidates.randomElement() ?? grid.first!.name.uppercased()
+        lastColorTarget = color
+
+        // MARK: - Shape selection (no back-to-back repeats)
+        var shapeCandidates = shapes.map { $0.rawValue.uppercased() }
+
+        if let last = lastShapeTarget, shapeCandidates.count > 1 {
+            shapeCandidates.removeAll { $0 == last }
+        }
+
+        let shape = shapeCandidates.randomElement() ?? shapes.first!.rawValue.uppercased()
+        lastShapeTarget = shape
+
+        // MARK: - DON'T TAP gating
         let allowDontTap = round >= 5
 
         let colorDontTap = allowDontTap && Bool.random()

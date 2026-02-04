@@ -8,16 +8,6 @@
 import SwiftUI
 
 struct ContentView: View {
-//    let AccessibilityColorPool: [GameColor] = [
-//        GameColor(name: "Blue",     color: Color(red: 0.00, green: 0.45, blue: 0.70)),
-//        GameColor(name: "Orange",   color: Color(red: 0.90, green: 0.60, blue: 0.00)),
-//        GameColor(name: "Sky Blue", color: Color(red: 0.35, green: 0.70, blue: 0.90)),
-//        GameColor(name: "Bluish Green", color: Color(red: 0.00, green: 0.60, blue: 0.50)),
-//        GameColor(name: "Yellow",   color: Color(red: 0.95, green: 0.90, blue: 0.25)),
-//        GameColor(name: "Vermillion", color: Color(red: 0.80, green: 0.40, blue: 0.00)),
-//        GameColor(name: "Reddish Purple", color: Color(red: 0.80, green: 0.60, blue: 0.70)),
-//        GameColor(name: "Gray",     color: Color(red: 0.60, green: 0.60, blue: 0.60))
-//    ]
 
     let colorPool: [GameColor] = [
         GameColor(name: "Red",    color: Color(red: 0.85, green: 0.15, blue: 0.15)),
@@ -30,133 +20,104 @@ struct ContentView: View {
         GameColor(name: "Black",  color: Color(red: 0.10, green: 0.10, blue: 0.10)),
         GameColor(name: "Pink",   color: Color(red: 0.95, green: 0.50, blue: 0.65))
     ]
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
 
+                // CLASSIC
                 NavigationLink {
                     ClassicModeView(
                         engine: GameEngine(
                             lives: Lives(max: 3),
                             colorPool: colorPool,
+                            config: ModeConfig(
+                                cardsPerGrid: 6,
+                                tapTimeLimit: 2.5,
+                                usesLives: true,
+                                totalGameTimeLimit: nil,
+                                leaderboardID: "com.example.ColorAttack.Classic"
+                            ),
                             rules: ClassicRules()
                         )
                     )
                 } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "gamecontroller.fill")
-                            .font(.title3)
-
-                        Text("CLASSIC")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .tracking(1)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.vertical, 14)
-                    .padding(.horizontal, 28)
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+                    modeButtonLabel(icon: "gamecontroller.fill", title: "CLASSIC")
                 }
                 .buttonStyle(.plain)
 
-
-                NavigationLink{
+                // RAPID
+                NavigationLink {
                     ClassicModeView(
                         engine: GameEngine(
-                            lives: Lives(max: 1), // irrelevant because usesLives = false
+                            lives: Lives(max: 1), 
                             colorPool: colorPool,
                             config: ModeConfig(
                                 cardsPerGrid: 6,
-                                tapTimeLimit: 120,
+                                tapTimeLimit: 1.0,
                                 usesLives: false,
-                                totalGameTimeLimit: 30 // 2 minutes
+                                totalGameTimeLimit: 30,
+                                leaderboardID: "com.example.ColorAttack.Rapid"
                             ),
                             rules: RapidRules()
                         )
                     )
-                }label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "clock.badge.exclamationmark.fill")
-                            .font(.title3)
-
-                        Text("RAPID")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .tracking(1)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.vertical, 14)
-                    .padding(.horizontal, 28)
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+                } label: {
+                    modeButtonLabel(icon: "clock.badge.exclamationmark.fill", title: "RAPID")
                 }
                 .buttonStyle(.plain)
-                .buttonStyle(.borderedProminent)
-                
+
+                // CHAOS
                 NavigationLink {
                     ChaosModeView(
                         engine: GameEngine(
-                            lives: Lives(max: 5), // Chaos is harder
+                            lives: Lives(max: 5),
                             colorPool: colorPool,
                             config: ModeConfig(
                                 cardsPerGrid: 6,
                                 tapTimeLimit: 2.5,
-                                usesLives: true
+                                usesLives: true,
+                                totalGameTimeLimit: nil,
+                                leaderboardID: "com.example.ColorAttack.Chaos"
                             ),
                             rules: ChaosRules()
                         )
                     )
                 } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "square.grid.2x2.fill")
-                            .font(.title3)
-
-                        Text("CHAOS")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .tracking(1)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.vertical, 14)
-                    .padding(.horizontal, 28)
-                    .background(
-                        LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+                    modeButtonLabel(icon: "square.grid.2x2.fill", title: "CHAOS")
                 }
                 .buttonStyle(.plain)
-
             }
-            .font(.title2)
             .navigationTitle("Game Modes")
             .padding()
         }
-            .onAppear {
-                GameCenterAuth.authenticate()
-            }
-
+        .onAppear {
+            GameCenterAuth.authenticate()
+        }
     }
-        
 
-        
+    private func modeButtonLabel(icon: String, title: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.title3)
+
+            Text(title)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .tracking(1)
+        }
+        .foregroundColor(.white)
+        .padding(.vertical, 14)
+        .padding(.horizontal, 28)
+        .background(
+            LinearGradient(
+                colors: [.blue, .purple],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+    }
 }
 
 #Preview {

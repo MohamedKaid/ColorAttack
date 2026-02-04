@@ -3,24 +3,16 @@
     "version" : "2024-11-15"
   },
   "resources" : {
-    "leaderboardImages" : {
-      "com.example.ColorAttack.Classic-en-US" : [
-        {
-          "localID" : "com.example.ColorAttack.Classic-en-US",
-          "url" : "en-US\/LeaderboardImage-com.example.ColorAttack.Classic-en-US.png"
-        }
-      ]
-    },
     "leaderboardLocalizations" : {
       "com.example.ColorAttack.Classic" : [
         {
-          "description" : "The most colors tapped",
+          "description" : "Highest Score in Classic",
           "formatterOverride" : "INTEGER",
-          "formatterSuffix" : "color",
-          "formatterSuffixSingular" : "color",
+          "formatterSuffix" : "",
+          "formatterSuffixSingular" : "",
           "locale" : "en-US",
           "localID" : "com.example.ColorAttack.Classic-en-US",
-          "name" : "Classic Leaderboard"
+          "name" : "Classic Mode"
         }
       ]
     },
@@ -34,6 +26,28 @@
         "scoreSortType" : "DESC",
         "submissionType" : "BEST_SCORE",
         "vendorIdentifier" : "com.example.ColorAttack.Classic",
+        "visibility" : "SHOW_FOR_ALL"
+      },
+      {
+        "archived" : false,
+        "defaultFormatter" : "INTEGER",
+        "referenceName" : "Rapid",
+        "scoreRangeEnd" : null,
+        "scoreRangeStart" : null,
+        "scoreSortType" : "DESC",
+        "submissionType" : "BEST_SCORE",
+        "vendorIdentifier" : "com.example.ColorAttack.Rapid",
+        "visibility" : "SHOW_FOR_ALL"
+      },
+      {
+        "archived" : false,
+        "defaultFormatter" : "INTEGER",
+        "referenceName" : "Chaos",
+        "scoreRangeEnd" : null,
+        "scoreRangeStart" : null,
+        "scoreSortType" : "DESC",
+        "submissionType" : "BEST_SCORE",
+        "vendorIdentifier" : "com.example.ColorAttack.Chaos",
         "visibility" : "SHOW_FOR_ALL"
       }
     ]

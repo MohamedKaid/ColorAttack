@@ -7,25 +7,28 @@
 
 import SwiftUI
 import Combine
+import GameKit
 
-
-// Setting Configurations for a Mode
+// Mode configuration (required leaderboardID for each mode)
 struct ModeConfig {
     var cardsPerGrid: Int
     var tapTimeLimit: TimeInterval
     var usesLives: Bool
     var totalGameTimeLimit: TimeInterval?
-    // Default Value during initialization
+    var leaderboardID: String
+
     init(
         cardsPerGrid: Int = 6,
         tapTimeLimit: TimeInterval = 1.0,
         usesLives: Bool = true,
-        totalGameTimeLimit: TimeInterval? = nil
+        totalGameTimeLimit: TimeInterval? = nil,
+        leaderboardID: String
     ) {
         self.cardsPerGrid = cardsPerGrid
         self.tapTimeLimit = tapTimeLimit
         self.usesLives = usesLives
         self.totalGameTimeLimit = totalGameTimeLimit
+        self.leaderboardID = leaderboardID
     }
 }
 
@@ -36,18 +39,18 @@ enum PlayerAction {
     case shapeTap(GameShape)
 }
 
-// Prompt Given to the user
+// Prompt shown to the player
 struct Prompt {
     var text: String
     var displayColor: GameColor? = nil
 }
 
-// The amount of time a user has to tap
+// Optional: rules can dynamically change tap time by round
 protocol TimingRules {
     func tapTimeLimit(for round: Int) -> TimeInterval
 }
 
-// Format to create rules for each game
+// Rules contract for each mode
 protocol ModeRules {
     func makeGrid(from pool: [GameColor], cardsPerGrid: Int, round: Int, score: Int) -> [GameColor]
 
@@ -75,13 +78,15 @@ protocol ModeRules {
 @MainActor
 final class GameEngine: ObservableObject {
 
-    // Game engine variables
     let lives: Lives
     let colorPool: [GameColor]
     let config: ModeConfig
     let rules: (any ModeRules)?
 
-    // Individual Game variables
+    // Prevent submitting the same run multiple times
+    private var didSubmitScore = false
+
+    // State the UI reads
     @Published private(set) var gridColors: [GameColor] = []
     @Published private(set) var promptText: String = ""
     @Published private(set) var switchOn: Bool = false
@@ -92,22 +97,19 @@ final class GameEngine: ObservableObject {
     @Published private(set) var gridShapes: [GameShape] = []
     @Published private(set) var shouldShuffleShapes: Bool = false
     @Published private(set) var remainingGameTime: TimeInterval? = nil
+    @Published private(set) var currentPrompt = Prompt(text: "?")
 
-    //Internal Game variables
-    private var hasRespondedThisRound = false
+    // Internal round state
     private var promptTask: Task<Void, Never>?
     private var gameTimerTask: Task<Void, Never>?
-    @Published private(set) var currentPrompt = Prompt(text: "?")
-    // Chaos multi-action support
     private var requiredActionsThisRound: Int = 1
     private var actionsTakenThisRound: Int = 0
     private var allActionsCorrectThisRound: Bool = true
 
-    //Initialize Game
     init(
         lives: Lives,
         colorPool: [GameColor],
-        config: ModeConfig = ModeConfig(),
+        config: ModeConfig,
         rules: (any ModeRules)? = nil
     ) {
         self.lives = lives
@@ -121,43 +123,38 @@ final class GameEngine: ObservableObject {
         gameTimerTask?.cancel()
     }
 
-
     func start() {
         stop()
 
-        // Reset state
+        didSubmitScore = false
         lives.reset()
         score = 0
         round = 0
         isGameOver = false
         remainingGameTime = config.totalGameTimeLimit
 
-        // Build initial grid + kick off timers
         rebuildGridIfNeeded(force: true)
         startGameTimerIfNeeded()
         nextRound()
     }
 
-    //Clear and stops giving prompts
     func stop() {
         promptTask?.cancel()
         promptTask = nil
+        remainingTapTime = 0
 
         gameTimerTask?.cancel()
         gameTimerTask = nil
     }
 
-    //restart game
     func restart() {
         start()
     }
-    
-    // Checks to see if action taken this round was correct
+
     func handleTap(action: PlayerAction) {
         guard !isGameOver else { return }
 
         let correct: Bool
-
         if let rules {
             correct = rules.isCorrect(
                 action: action,
@@ -171,37 +168,38 @@ final class GameEngine: ObservableObject {
             correct = true
         }
 
-        allActionsCorrectThisRound =
-            allActionsCorrectThisRound && correct
-
+        allActionsCorrectThisRound = allActionsCorrectThisRound && correct
         actionsTakenThisRound += 1
 
         if actionsTakenThisRound >= requiredActionsThisRound {
             finalizeRound()
         }
     }
-    
-    // Stops timer, updates score, checks status
+
     private func finalizeRound() {
         stopPromptTimerOnly()
 
         if let rules {
             score += rules.scoreDelta(isCorrect: allActionsCorrectThisRound)
-
             if !allActionsCorrectThisRound && config.usesLives {
                 lives.lose()
             }
         }
 
         if config.usesLives, lives.isEmpty {
-            isGameOver = true
-            stop()
+            endGame()
         } else {
             proceed()
         }
     }
 
-    //
+    private func endGame() {
+        guard !isGameOver else { return }
+        isGameOver = true
+        stop()
+        submitScoreIfNeeded()
+    }
+
     private func rebuildGridIfNeeded(force: Bool) {
         if force {
             buildGrid()
@@ -213,7 +211,6 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // Build a grid
     private func buildGrid() {
         if let rules {
             gridColors = rules.makeGrid(
@@ -227,29 +224,24 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // 
     private func nextRound() {
         guard !isGameOver else { return }
 
         if config.usesLives, lives.isEmpty {
-            isGameOver = true
-            stop()
+            endGame()
             return
         }
 
         round += 1
-        hasRespondedThisRound = false
         actionsTakenThisRound = 0
         allActionsCorrectThisRound = true
 
         // Chaos requires two actions per round
-        requiredActionsThisRound = rules is ChaosRules ? 2 : 1
+        requiredActionsThisRound = (rules is ChaosRules) ? 2 : 1
 
         rebuildGridIfNeeded(force: false)
 
-        var lastPromptText: String = ""
-        
-        // Chaos spatial difficulty
+        // Chaos spatial difficulty (optional)
         if rules is ChaosRules {
             switch round {
             case 0..<10:
@@ -272,30 +264,19 @@ final class GameEngine: ObservableObject {
             currentPrompt = result.prompt
             promptText = result.prompt.text
             switchOn = result.switchOn
-
-            lastPromptText = currentPrompt.text
         } else {
-            var newText = gridColors.randomElement()?.name ?? "?"
-            
-            while newText != lastPromptText && gridColors.count > 1 {
-                newText = gridColors.randomElement()?.name ?? "?"
-            }
-            currentPrompt = Prompt(text: newText)
-            promptText = newText
+            currentPrompt = Prompt(text: gridColors.randomElement()?.name ?? "?")
+            promptText = currentPrompt.text
             switchOn = Bool.random()
-            lastPromptText = newText
         }
-
 
         startPromptTimer()
     }
 
-    // starts prompt timer
     private func startPromptTimer() {
         stopPromptTimerOnly()
 
         let timeLimit: TimeInterval
-
         if let timingRules = rules as? TimingRules {
             timeLimit = timingRules.tapTimeLimit(for: round)
         } else {
@@ -322,19 +303,16 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // Reset Prompt Timer
     private func stopPromptTimerOnly() {
         promptTask?.cancel()
         promptTask = nil
         remainingTapTime = 0
     }
 
-    // Handling a missed tap
     private func handleTimeout() {
         guard !isGameOver else { return }
 
         let missingActions = requiredActionsThisRound - actionsTakenThisRound
-
         if missingActions > 0 {
             allActionsCorrectThisRound = false
             actionsTakenThisRound = requiredActionsThisRound
@@ -342,7 +320,6 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // start the timer on the game
     private func startGameTimerIfNeeded() {
         gameTimerTask?.cancel()
         gameTimerTask = nil
@@ -363,8 +340,7 @@ final class GameEngine: ObservableObject {
                 remainingGameTime = remaining
 
                 if remaining <= 0 {
-                    isGameOver = true
-                    stop()
+                    endGame()
                     return
                 }
 
@@ -373,11 +349,37 @@ final class GameEngine: ObservableObject {
         }
     }
 
-    // Advance the round
     private func proceed() {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 250_000_000)
             nextRound()
+        }
+    }
+
+    private func submitScoreIfNeeded() {
+        guard !didSubmitScore else { return }
+        didSubmitScore = true
+
+        guard GKLocalPlayer.local.isAuthenticated else {
+            print("Game Center not authenticated")
+            return
+        }
+
+        let leaderboardID = config.leaderboardID
+        print("Submitting score \(score) to \(leaderboardID)")
+
+        Task {
+            do {
+                try await GKLeaderboard.submitScore(
+                    score,
+                    context: 0,
+                    player: GKLocalPlayer.local,
+                    leaderboardIDs: [leaderboardID]
+                )
+                print("Score submitted:", score)
+            } catch {
+                print("Score submit failed:", error.localizedDescription)
+            }
         }
     }
 }

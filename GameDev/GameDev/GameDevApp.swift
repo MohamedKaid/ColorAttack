@@ -10,9 +10,9 @@ import GameKit
 
 @main
 struct GameDevApp: App {
-    init() {
-            authenticateGameCenter()
-        }
+//    init() {
+//            authenticateGameCenter()
+//        }
 
         var body: some Scene {
             WindowGroup {

@@ -149,7 +149,14 @@ struct ContentView: View {
             .navigationTitle("Game Modes")
             .padding()
         }
+            .onAppear {
+                GameCenterAuth.authenticate()
+            }
+
     }
+        
+
+        
 }
 
 #Preview {

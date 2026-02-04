@@ -3,6 +3,39 @@
     "version" : "2024-11-15"
   },
   "resources" : {
-
+    "leaderboardImages" : {
+      "com.example.ColorAttack.Classic-en-US" : [
+        {
+          "localID" : "com.example.ColorAttack.Classic-en-US",
+          "url" : "en-US\/LeaderboardImage-com.example.ColorAttack.Classic-en-US.png"
+        }
+      ]
+    },
+    "leaderboardLocalizations" : {
+      "com.example.ColorAttack.Classic" : [
+        {
+          "description" : "The most colors tapped",
+          "formatterOverride" : "INTEGER",
+          "formatterSuffix" : "color",
+          "formatterSuffixSingular" : "color",
+          "locale" : "en-US",
+          "localID" : "com.example.ColorAttack.Classic-en-US",
+          "name" : "Classic Leaderboard"
+        }
+      ]
+    },
+    "leaderboards" : [
+      {
+        "archived" : false,
+        "defaultFormatter" : "INTEGER",
+        "referenceName" : "Classic",
+        "scoreRangeEnd" : null,
+        "scoreRangeStart" : null,
+        "scoreSortType" : "DESC",
+        "submissionType" : "BEST_SCORE",
+        "vendorIdentifier" : "com.example.ColorAttack.Classic",
+        "visibility" : "SHOW_FOR_ALL"
+      }
+    ]
   }
 }

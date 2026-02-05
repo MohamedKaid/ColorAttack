@@ -20,28 +20,27 @@ final class ClassicRules: ModeRules, TimingRules{
     private let difficultyStep = 15
     private let firstStep = 4
     
-    /// Rounds after which "DON'T TAP" can appear
+    //Rounds after which "DON'T TAP" can appear
     private let switchStartRound = 5
     
     // Probability of it switching
     private let switchChance: Double = 0.3
     
-    /// Round when Stroop effect starts
+    // Round when Stroop effect starts
     private let stroopStartRound = 15
 
-    /// Chance (0–1) that Stroop is applied once unlocked
+    // Chance (0–1) that Stroop is applied once unlocked
     private let stroopChance: Double = 0.4
     
-    /// Chance that a "DON'T TAP" prompt uses a color NOT on the grid
+    // Chance that a "DON'T TAP" prompt uses a color NOT on the grid
     private let offGridChance: Double = 0.3
 
-    /// Minimum round before off-grid prompts are allowed
+    //Minimum round before off-grid prompts are allowed
     private let offGridStartRound = 1000000000
     
     private var lastTargetName: String? = nil
     
-    // MARK: - Grid
-    
+    // Creating grid
     func makeGrid(
         from pool: [GameColor],
         cardsPerGrid: Int,
@@ -63,8 +62,7 @@ final class ClassicRules: ModeRules, TimingRules{
         return Array(pool.shuffled().prefix(gridSize))
     }
     
-    // MARK: - Prompt
-    
+    // Creating Prompt
     func makePrompt(
         round: Int,
         score: Int,
@@ -80,7 +78,6 @@ final class ClassicRules: ModeRules, TimingRules{
             round >= offGridStartRound &&
             Double.random(in: 0...1) < offGridChance
 
-        // ✅ NEW: candidate selection with no-repeat logic
         var candidates: [String]
 
         if useOffGrid {
@@ -94,13 +91,12 @@ final class ClassicRules: ModeRules, TimingRules{
             candidates = grid.map { $0.name }
         }
 
-        // ✅ Remove last target if possible
         if let last = lastTargetName, candidates.count > 1 {
             candidates.removeAll { $0 == last }
         }
 
         let targetName = candidates.randomElement() ?? "?"
-        lastTargetName = targetName   // ✅ remember for next round
+        lastTargetName = targetName   
 
         let text = switchOn
             ? "DON'T TAP \(targetName.uppercased())"
@@ -108,7 +104,6 @@ final class ClassicRules: ModeRules, TimingRules{
 
         var displayColor: GameColor? = nil
 
-        // ✅ Stroop effect (later game only)
         if round >= stroopStartRound,
            Double.random(in: 0...1) < stroopChance {
 
@@ -122,8 +117,8 @@ final class ClassicRules: ModeRules, TimingRules{
             switchOn
         )
     }
-    // MARK: - Correctness
     
+    // Determines whether its correct based on the action
     func isCorrect(
         action: PlayerAction,
         prompt: Prompt,
@@ -154,27 +149,24 @@ final class ClassicRules: ModeRules, TimingRules{
         }
     }
     
-    // MARK: - Scoring
-    
+    // Scoring System
     func scoreDelta(isCorrect: Bool) -> Int {
         isCorrect ? 10 : 0
     }
     
-    // MARK: - Grid reshuffle logic
-    
+    // Reshuffles the cards more often as you advance
     func shouldReshuffle(round: Int, score: Int) -> Bool {
         switch round {
         case 0..<10:
-            return round % 8 == 0   // early: very stable
+            return round % 8 == 0
         case 10..<20:
             return round % 4 == 0
         default:
-            return round % 2 == 0   // late game: more chaos
+            return round % 2 == 0
         }
     }
     
-    // MARK: - Helpers
-    
+    // Getting color name from prompt
     private func extractColorName(from prompt: String) -> String? {
         prompt
             .replacingOccurrences(of: "DON'T TAP ", with: "")
@@ -182,8 +174,8 @@ final class ClassicRules: ModeRules, TimingRules{
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .capitalized
     }
-    // MARK: - Speed control
     
+    // Limit for tapping(gets lower as you go)
     func tapTimeLimit(for round: Int) -> TimeInterval {
         let start: TimeInterval = 2.5   // slower start
         let min: TimeInterval = 0.8      // more forgiving minimum

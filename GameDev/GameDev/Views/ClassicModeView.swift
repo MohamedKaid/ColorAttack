@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ClassicModeView: View {
     @StateObject var engine: GameEngine
+    @State private var bestClassicScore = 0
+
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -70,6 +72,10 @@ struct ClassicModeView: View {
 
                 Text("\(engine.score)")
                     .font(.system(size: 36, weight: .bold))
+                VStack {
+                    Text("Best: \(bestClassicScore)")
+                }
+                
 
                 if engine.remainingGameTime == nil {
                     HStack(spacing: 8) {
@@ -138,6 +144,20 @@ struct ClassicModeView: View {
                         .fill(.background)
                 )
             }
+        }
+//        .onChange(of: engine.isGameOver){
+//            loadMyBestScore(
+//                    leaderboardID: "com.example.ColorAttack.Classic"
+//                ) { score in
+//                    bestClassicScore = score
+//                }
+//        }
+        .onAppear {
+            loadMyBestScore(
+                    leaderboardID: "com.example.ColorAttack.Classic"
+                ) { score in
+                    bestClassicScore = score
+                }
         }
         .navigationTitle("Mode")
         .onAppear { engine.start() }

@@ -20,7 +20,8 @@ struct ContentView: View {
         GameColor(name: "Black",  color: Color(red: 0.10, green: 0.10, blue: 0.10)),
         GameColor(name: "Pink",   color: Color(red: 0.95, green: 0.50, blue: 0.65))
     ]
-
+    
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
@@ -87,6 +88,12 @@ struct ContentView: View {
                     modeButtonLabel(icon: "square.grid.2x2.fill", title: "CHAOS")
                 }
                 .buttonStyle(.plain)
+                
+                Button("Leaderboard") {
+                    GameCenterUI.showLeaderboards {
+                        GameCenterAuth.authenticate()
+                    }
+                }
             }
             .navigationTitle("Game Modes")
             .padding()

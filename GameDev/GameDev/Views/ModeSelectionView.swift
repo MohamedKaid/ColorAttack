@@ -91,7 +91,7 @@ struct ModeSelectionView: View {
                     colorPool: colorPool,
                     config: ModeConfig(
                         cardsPerGrid: 6,
-                        tapTimeLimit: 1.0,
+                        tapTimeLimit: 120,
                         usesLives: false,
                         totalGameTimeLimit: 30,
                         leaderboardID: "com.example.ColorAttack.Rapid"

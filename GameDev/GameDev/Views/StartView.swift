@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Lottie
 
 struct StartView: View {
 
@@ -33,6 +34,9 @@ struct StartView: View {
                             .font(.system(size: 64, weight: .heavy))
                             .foregroundColor(.cyan)
                     }
+                    
+                    LottieView(animation: .named("finalShape"))
+                        .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
 
 //                    //Placeholder Shapes
 //                    HStack(spacing: 20) {
@@ -42,8 +46,6 @@ struct StartView: View {
 //                                .frame(width: 70, height: 70)
 //                        }
 //                    }
-
-                    Spacer()
 
                     // Start Button
                     NavigationLink {

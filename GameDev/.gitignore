@@ -1,4 +1,48 @@
+# Xcode user-specific files
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
 
+# Build files
+build/
+DerivedData/
+*.moved-aside
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods (if you use it)
+Pods/
+
+# Signing & Provisioning (IMPORTANT for team collaboration)
+*.mobileprovision
+*.provisionprofile
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# App packaging
+*.ipa
+*.xcarchive
+
+# Crashlytics
+crashlytics-build.properties
+crashlytics.properties
+fabric.properties
 .DS_Store
 **/*.xcuserstate
 **/xcuserdata/

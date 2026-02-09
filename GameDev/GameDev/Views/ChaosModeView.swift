@@ -14,6 +14,7 @@ struct ChaosModeView: View {
     @State private var lastLives: Int = 0
     @State private var animateHearts = false
     @State private var flashTimer = false
+    @State private var showCountdown = true
 
     private let colorColumns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -27,22 +28,13 @@ struct ChaosModeView: View {
 
     var body: some View {
         ZStack {
-
             // Background
-            GeometryReader { geo in
-                Image("chaos_bg")
-                    .resizable()
-                    .scaledToFill()
-                    .scaleEffect(x: 1, y: -1)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
+            GameBackground(mode: .chaos)
+                .ignoresSafeArea()
 
+            // Game content
             ZStack {
-
                 VStack(spacing: 24) {
-
                     Spacer(minLength: 12)
 
                     // Instructions
@@ -63,7 +55,7 @@ struct ChaosModeView: View {
                     .frame(maxWidth: 1200)
                     .animation(.easeInOut(duration: 0.25), value: swapSides)
 
-                    // Tap Timer(flashes under 1.0)
+                    // Tap Timer (flashes under 1.0)
                     let isUrgent = engine.remainingTapTime < 1.0
 
                     HStack(spacing: 8) {
@@ -72,13 +64,17 @@ struct ChaosModeView: View {
 
                         Text(String(format: "%.1f s", engine.remainingTapTime))
                             .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(isUrgent ? .red : .primary)
+                            .foregroundColor(isUrgent ? .red : .white)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(
                         Capsule()
-                            .fill(isUrgent ? Color.red.opacity(0.2) : Color.black.opacity(0.25))
+                            .fill(isUrgent ? Color.red.opacity(0.3) : Color.black.opacity(0.4))
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
                     )
                     .scaleEffect(flashTimer ? 1.15 : 1.0)
                     .onChange(of: isUrgent) { flashTimer = isUrgent }
@@ -94,27 +90,43 @@ struct ChaosModeView: View {
 
                 // Game Over Overlay
                 if engine.isGameOver {
-                    Color.black.opacity(0.6)
+                    Color.black.opacity(0.7)
                         .ignoresSafeArea()
 
                     VStack(spacing: 16) {
                         Text("Game Over")
                             .font(.largeTitle)
                             .bold()
+                            .foregroundColor(.white)
 
                         Text("Final Score: \(engine.score)")
                             .font(.headline)
+                            .foregroundColor(.white.opacity(0.9))
 
                         Button("Restart") {
-                            engine.restart()
+                            showCountdown = true
                         }
                         .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(.background)
+                            .fill(Color.black.opacity(0.8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
                     )
+                }
+            }
+            .blur(radius: showCountdown ? 8 : 0)
+            .allowsHitTesting(!showCountdown)
+
+            // Countdown overlay
+            if showCountdown {
+                CountdownView {
+                    showCountdown = false
+                    engine.start()
                 }
             }
         }
@@ -122,27 +134,32 @@ struct ChaosModeView: View {
         // Header
         .safeAreaInset(edge: .top) {
             ZStack {
-
                 // Mode Label
                 HStack {
                     Text("CHAOS")
                         .font(.headline)
                         .bold()
+                        .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(
                             Capsule()
-                                .fill(Color.black.opacity(0.5))
+                                .fill(Color.white.opacity(0.15))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
                         )
                     Spacer()
                 }
 
                 // Lives
-                HStack(spacing: 8) {
+                HStack(spacing: 12) {
                     ForEach(0..<engine.lives.current, id: \.self) { _ in
                         Image(systemName: "heart.fill")
                             .foregroundColor(.red)
-                            .font(.title2)
+                            .font(.system(size: 36, weight: .bold))
+                            .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                             .scaleEffect(animateHearts ? 0.7 : 1.0)
                             .animation(
                                 .spring(response: 0.25, dampingFraction: 0.6),
@@ -157,7 +174,7 @@ struct ChaosModeView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("SCORE")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.7))
 
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
@@ -167,9 +184,7 @@ struct ChaosModeView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
-            .background(
-                Color.black.opacity(0.4)
-            )
+            .background(Color.black.opacity(0.5))
         }
 
         // Swaps sides after round 12
@@ -180,6 +195,8 @@ struct ChaosModeView: View {
                 swapSides = false
             }
         }
+        
+        // Heart loss animation
         .onChange(of: engine.lives.current) {
             if engine.lives.current < lastLives {
                 animateHearts = true
@@ -192,7 +209,7 @@ struct ChaosModeView: View {
 
         .onAppear {
             lastLives = engine.lives.current
-            engine.start()
+            showCountdown = true
         }
         .onDisappear { engine.stop() }
     }
@@ -202,7 +219,7 @@ struct ChaosModeView: View {
         VStack(spacing: 12) {
             Text("COLORS")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.7))
 
             LazyVGrid(columns: colorColumns, spacing: 16) {
                 ForEach(engine.gridColors) { gameColor in
@@ -224,7 +241,7 @@ struct ChaosModeView: View {
         VStack(spacing: 12) {
             Text("SHAPES")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.7))
 
             LazyVGrid(columns: shapeColumns, spacing: 16) {
                 ForEach(engine.gridShapes) { shape in
@@ -242,9 +259,6 @@ struct ChaosModeView: View {
     }
 }
 
-
-
-
 struct ChaosInstructionView: View {
     let text: String
 
@@ -257,12 +271,17 @@ struct ChaosInstructionView: View {
             ForEach(lines, id: \.self) { line in
                 Text(line)
                     .font(.title2)
+                    .foregroundColor(.white)
                     .bold()
                     .padding(.vertical, 10)
                     .padding(.horizontal, 20)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
                             .fill(backgroundColor(for: line))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
                     )
             }
         }
@@ -275,4 +294,21 @@ struct ChaosInstructionView: View {
             return Color.blue.opacity(0.35)
         }
     }
+}
+
+#Preview("Chaos Mode") {
+    let engine = GameEngine(
+        lives: Lives(max: 5),
+        colorPool: colorPool,
+        config: ModeConfig(
+            cardsPerGrid: 6,
+            tapTimeLimit: 2.5,
+            usesLives: true,
+            totalGameTimeLimit: nil,
+            leaderboardID: "com.example.ColorAttack.Chaos"
+        ),
+        rules: ChaosRules()
+    )
+
+    ChaosModeView(engine: engine)
 }

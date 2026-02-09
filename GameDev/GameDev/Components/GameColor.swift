@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct GameColor: Identifiable {
+struct GameColor: Identifiable, Equatable{
     let id = UUID()
     let name: String
     let color: Color

@@ -10,29 +10,33 @@ import SwiftUI
 struct ClassicModeView: View {
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
-
     @State private var lastLives: Int = 0
     @State private var animateHearts = false
     @State private var flashTimer = false
+    @State private var showCountdown = true
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
         count: 3
     )
 
+    // Show New background
+    private var backgroundMode: GameBackground.GameMode {
+        engine.config.totalGameTimeLimit == nil ? .classic : .rapid
+    }
+    
+    // Whether Rapid Mode is running
+    private var isRapidMode: Bool {
+        engine.config.totalGameTimeLimit != nil
+    }
+
     var body: some View {
         ZStack {
-            // Background Image
-            GeometryReader { geo in
-                Image(engine.remainingGameTime == nil ? "classic_bg" : "rapid_bg")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .scaleEffect(x: 1, y: -1)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-            }
+            // Background
+            GameBackground(mode: backgroundMode)
+                .ignoresSafeArea()
 
+            // Game content
             ZStack {
                 VStack(spacing: 24) {
                     Spacer(minLength: 12)
@@ -43,23 +47,28 @@ struct ClassicModeView: View {
                     Text(engine.promptText.uppercased())
                         .font(.largeTitle)
                         .bold()
-                        .foregroundColor(engine.currentPrompt.displayColor?.color ?? .primary)
+                        // Prompt color is white
+                        .foregroundColor(
+                            isStroop
+                                ? engine.currentPrompt.displayColor?.color
+                                : .white
+                        )
                         .padding(.vertical, 12)
                         .padding(.horizontal, 28)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(
-                                    isStroop
-                                    ? (
-                                        (engine.currentPrompt.displayColor?.color.isLight ?? true)
-                                        ? Color.black.opacity(0.75)
-                                        : Color.white.opacity(0.75)
-                                    )
-                                    : engine.switchOn
-                                        ? Color.red.opacity(0.25)
-                                        : Color.blue.opacity(0.25)
+                                .fill(Color.black.opacity(0.5))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(
+                                            engine.switchOn
+                                                ? Color.red.opacity(0.6)
+                                                : Color.white.opacity(0.2),
+                                            lineWidth: 2
+                                        )
                                 )
                         )
+                        .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
 
                     // Grid of Colors
                     LazyVGrid(columns: columns, spacing: 16) {
@@ -76,8 +85,8 @@ struct ClassicModeView: View {
                     .padding()
                     .frame(maxWidth: 1100)
 
-                    // Tap timer (Classic)
-                    if engine.remainingGameTime == nil {
+                    // Tap timer (Classic only)
+                    if !isRapidMode {
                         let isUrgent = engine.remainingTapTime < 1.0
 
                         HStack(spacing: 8) {
@@ -86,13 +95,17 @@ struct ClassicModeView: View {
 
                             Text(String(format: "%.1f s", engine.remainingTapTime))
                                 .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(isUrgent ? .red : .primary)
+                                .foregroundColor(isUrgent ? .red : .white)
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(isUrgent ? Color.red.opacity(0.2) : Color.black.opacity(0.25))
+                                .fill(isUrgent ? Color.red.opacity(0.3) : Color.black.opacity(0.4))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
                         )
                         .scaleEffect(flashTimer ? 1.15 : 1.0)
                         .onChange(of: isUrgent) { flashTimer = isUrgent }
@@ -109,27 +122,43 @@ struct ClassicModeView: View {
 
                 // Game Over Overlay
                 if engine.isGameOver {
-                    Color.black.opacity(0.6)
+                    Color.black.opacity(0.7)
                         .ignoresSafeArea()
 
                     VStack(spacing: 16) {
                         Text("Game Over")
                             .font(.largeTitle)
                             .bold()
+                            .foregroundColor(.white)
 
                         Text("Final Score: \(engine.score)")
                             .font(.headline)
+                            .foregroundColor(.white.opacity(0.9))
 
                         Button("Restart") {
-                            engine.restart()
+                            showCountdown = true
                         }
                         .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(.background)
+                            .fill(Color.black.opacity(0.8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
                     )
+                }
+            }
+            .blur(radius: showCountdown ? 8 : 0)
+            .allowsHitTesting(!showCountdown)
+
+            // Countdown overlay
+            if showCountdown {
+                CountdownView {
+                    showCountdown = false
+                    engine.start()
                 }
             }
         }
@@ -137,30 +166,37 @@ struct ClassicModeView: View {
         // Header
         .safeAreaInset(edge: .top) {
             ZStack {
-                // Mode Label
+                // Mode label
                 HStack {
-                    Text(engine.remainingGameTime == nil ? "CLASSIC" : "RAPID")
+                    Text(isRapidMode ? "RAPID" : "CLASSIC")
                         .font(.headline)
-                        .foregroundColor(Color.white)
+                        .foregroundColor(.white)
                         .bold()
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(
-                            Capsule().fill(Color.black.opacity(0.5))
+                            Capsule()
+                                .fill(Color.white.opacity(0.15))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
                         )
                     Spacer()
                 }
 
-                // Lives/Timer
-                if let remaining = engine.remainingGameTime {
+                // Lives/Timer center
+                if isRapidMode {
+                    // RAPID: Show timer
+                    let remaining = engine.remainingGameTime ?? engine.config.totalGameTimeLimit ?? 0
                     let isUrgent = remaining <= 5
-
+                    
                     HStack(spacing: 8) {
                         Image(systemName: "clock.fill")
                             .foregroundColor(isUrgent ? .red : .yellow)
-
+                            .font(.system(size: 36, weight: .bold))
                         Text(formatTime(remaining))
-                            .font(.title2)
+                            .font(.system(size: 36, weight: .bold))
                             .bold()
                             .foregroundColor(.white)
                     }
@@ -173,44 +209,46 @@ struct ClassicModeView: View {
                         value: flashTimer
                     )
                 } else {
-                    HStack(spacing: 8) {
+                    // CLASSIC: Show hearts
+                    HStack(spacing: 12) {
                         ForEach(0..<engine.lives.current, id: \.self) { _ in
                             Image(systemName: "heart.fill")
                                 .foregroundColor(.red)
-                                .font(.title2)
+                                .font(.system(size: 36, weight: .bold))
+                                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
                                 .scaleEffect(animateHearts ? 0.7 : 1.0)
-                                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: animateHearts)
+                                .animation(
+                                    .spring(response: 0.25, dampingFraction: 0.6),
+                                    value: animateHearts
+                                )
                         }
                     }
                 }
 
-                // Score + Best
+                // Score
                 HStack {
                     Spacer()
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("SCORE")
                             .font(.caption)
-                            .foregroundColor(Color.white)
-
+                            .foregroundColor(.white.opacity(0.7))
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
-
-                        // ✅ Added from your branch
                         Text("Best: \(bestClassicScore)")
                             .font(.caption)
-                            .foregroundColor(Color.white.opacity(0.9))
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
-            .background(Color.black.opacity(0.4))
+            .background(Color.black.opacity(0.5))
         }
 
-        // Heart loss animation
+        // Heart loss animation (Classic only)
         .onChange(of: engine.lives.current) {
-            if engine.remainingGameTime == nil {
+            if !isRapidMode {
                 if engine.lives.current < lastLives {
                     animateHearts = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -221,12 +259,16 @@ struct ClassicModeView: View {
             }
         }
 
-        // Load best score + start engine
+        // Load best score
         .onAppear {
             lastLives = engine.lives.current
-            engine.start()
+            showCountdown = true
 
-            loadMyBestScore(leaderboardID: "com.example.ColorAttack.Classic") { score in
+            let leaderboardID = isRapidMode
+                ? "com.example.ColorAttack.Rapid"
+                : "com.example.ColorAttack.Classic"
+            
+            loadMyBestScore(leaderboardID: leaderboardID) { score in
                 bestClassicScore = score
             }
         }
@@ -237,4 +279,38 @@ struct ClassicModeView: View {
         let total = max(0, Int(seconds.rounded(.down)))
         return String(format: "%d:%02d", total / 60, total % 60)
     }
+}
+
+#Preview("Classic Mode") {
+    let engine = GameEngine(
+        lives: Lives(max: 3),
+        colorPool: colorPool,
+        config: ModeConfig(
+            cardsPerGrid: 6,
+            tapTimeLimit: 2.5,
+            usesLives: true,
+            totalGameTimeLimit: nil,
+            leaderboardID: "com.example.ColorAttack.Classic"
+        ),
+        rules: ClassicRules()
+    )
+
+    ClassicModeView(engine: engine)
+}
+
+#Preview("Rapid Mode") {
+    let engine = GameEngine(
+        lives: Lives(max: 1),
+        colorPool: colorPool,
+        config: ModeConfig(
+            cardsPerGrid: 6,
+            tapTimeLimit: 120,
+            usesLives: false,
+            totalGameTimeLimit: 30,
+            leaderboardID: "com.example.ColorAttack.Rapid"
+        ),
+        rules: RapidRules()
+    )
+
+    ClassicModeView(engine: engine)
 }

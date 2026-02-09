@@ -11,72 +11,56 @@ import Lottie
 struct StartView: View {
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                // Background Image
-                Image("mode_select_bg")
+        ZStack {
+            // Background
+            GameBackground(mode: .menu)
+                .ignoresSafeArea()
+
+            VStack(spacing: 24) {
+
+                Spacer()
+                
+                // Title Image
+                Image("Title")
                     .resizable()
-                    .scaledToFill()
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .ignoresSafeArea()
+                    .scaledToFit()
+                    .frame(maxWidth: 600)
+                    .padding(.horizontal, 40)
+                    .shadow(color: .black.opacity(0.5), radius: 10, x: 0, y: 5)
 
-                VStack(spacing: 24) {
+                // Animated Shapes Bouncing
+                LottieView(animation: .named("finalShape"))
+                    .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
 
-                    Spacer()
-
-                    //Placeholder Title
-                    VStack(spacing: 4) {
-                        Text("COLOR")
-                            .font(.system(size: 72, weight: .heavy))
-                            .foregroundColor(.orange)
-
-                        Text("ATTACK")
-                            .font(.system(size: 64, weight: .heavy))
-                            .foregroundColor(.cyan)
-                    }
-                    
-                    LottieView(animation: .named("finalShape"))
-                        .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
-
-//                    //Placeholder Shapes
-//                    HStack(spacing: 20) {
-//                        ForEach(0..<4) { _ in
-//                            RoundedRectangle(cornerRadius: 16)
-//                                .fill(Color.white.opacity(0.25))
-//                                .frame(width: 70, height: 70)
-//                        }
-//                    }
-
-                    // Start Button
-                    NavigationLink {
-                        ModeSelectionView()
-                    } label: {
-                        Text("START")
-                            .font(.title)
-                            .bold()
-                            .foregroundColor(.white)
-                            .frame(width: 260, height: 64)
-                            .background(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.cyan, .blue],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
+                // Start Button
+                NavigationLink {
+                    ModeSelectionView()
+                } label: {
+                    Text("START")
+                        .font(.title)
+                        .bold()
+                        .foregroundColor(.white)
+                        .frame(width: 260, height: 64)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.cyan, .blue],
+                                        startPoint: .top,
+                                        endPoint: .bottom
                                     )
-                            )
-                            .shadow(radius: 12)
-                    }
-
-                    Spacer(minLength: 40)
+                                )
+                        )
+                        .shadow(radius: 12)
                 }
+
+                Spacer(minLength: 40)
             }
         }
     }
 }
 
-#Preview() {
+#Preview {
     NavigationStack {
         StartView()
     }

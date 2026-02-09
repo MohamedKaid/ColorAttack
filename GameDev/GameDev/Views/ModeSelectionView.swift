@@ -18,7 +18,6 @@ struct ModeSelectionView: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: geo.size.width, height: geo.size.height)
-                    .ignoresSafeArea()
 
 
 
@@ -62,6 +61,7 @@ struct ModeSelectionView: View {
                 destinationView(for: mode)
             }
         }
+        .ignoresSafeArea()
     }
 
     // Game Modes

@@ -5,7 +5,7 @@
 //  Created by Mohamed Shahbain on 2/2/26.
 //
 
-enum GameShape: String, CaseIterable, Identifiable {
+enum GameShape: String, CaseIterable, Identifiable, Equatable {
 
     case circle
     case square

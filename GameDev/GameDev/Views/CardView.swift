@@ -13,6 +13,11 @@ struct CardView: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 18)
             .fill(gameColor.color)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.35), lineWidth: 2)
+            )
+            .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
             .frame(height: 150)
             .overlay(
                 Text(gameColor.name)

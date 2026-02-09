@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ChaosModeView: View {
     @StateObject var engine: GameEngine
-
+    @State private var bestClassicScore = 0
     @State private var swapSides = false
     @State private var lastLives: Int = 0
     @State private var animateHearts = false
@@ -179,6 +179,10 @@ struct ChaosModeView: View {
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
+                        
+                        Text("Best: \(bestClassicScore)")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
             }
@@ -205,6 +209,17 @@ struct ChaosModeView: View {
                 }
             }
             lastLives = engine.lives.current
+        }
+        
+        .onAppear {
+            lastLives = engine.lives.current
+            showCountdown = true
+
+            let leaderboardID = "com.example.ColorAttack.Chaos"
+            
+            loadMyBestScore(leaderboardID: leaderboardID) { score in
+                bestClassicScore = score
+            }
         }
 
         .onAppear {

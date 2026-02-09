@@ -30,6 +30,29 @@ struct ContentView: View {
     }
 }
 
+
+//import SwiftUI
+//import UIKit // UIFont is part of UIKit
+//
+//struct ContentView: View {
+//    var body: some View {
+//        Text("Printing all available fonts to the console...")
+//            .onAppear {
+//                printAllFonts()
+//            }
+//    }
+//
+//    func printAllFonts() {
+//        for familyName in UIFont.familyNames.sorted() {
+//            print("Family: \(familyName)")
+//            let names = UIFont.fontNames(forFamilyName: familyName)
+//            for fontName in names {
+//                print("  - \(fontName)")
+//            }
+//        }
+//    }
+//}
+
 #Preview {
     ContentView()
 }

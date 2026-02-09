@@ -17,7 +17,7 @@ struct ModeCardView: View {
             // Title of the Mode
             Text(mode.title)
                 //.font(.system(size: 28, weight: .heavy, design: .rounded))
-                .font(.custom("Bangers", size: 20))
+                .font(.custom("Candy-Planet", size: 40))
                 .foregroundColor(.black)
                 .frame(height: 120)
 

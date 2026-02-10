@@ -9,6 +9,8 @@ import SwiftUI
 import Lottie
 
 struct StartView: View {
+    
+    @State private var showSettings = false
 
     var body: some View {
         ZStack {
@@ -56,9 +58,40 @@ struct StartView: View {
 
                 Spacer(minLength: 40)
             }
+            
+            // Settings button (top right)
+            VStack {
+                HStack {
+                    Spacer()
+                    
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showSettings = true
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title)
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(12)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.15))
+                            )
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 20)
+                }
+                Spacer()
+            }
+            
+            // Settings popup overlay
+            if showSettings {
+                SettingsPopupView(isPresented: $showSettings)
+                    .transition(.opacity)
+            }
         }
         .onAppear(){
-        // AudioPlayer.shared.playMusic("Game Theme 3")
+            AudioPlayer.shared.playMusic("Game Theme 3")
         }
     }
 }

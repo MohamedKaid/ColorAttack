@@ -14,6 +14,7 @@ struct ClassicModeView: View {
     @State private var animateHearts = false
     @State private var flashTimer = false
     @State private var showCountdown = true
+    @State private var showSettings = false
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -43,33 +44,38 @@ struct ClassicModeView: View {
 
                     // Prompt (Stroop-aware)
                     let isStroop = engine.currentPrompt.displayColor != nil
-
+                    let stroopColor = engine.currentPrompt.displayColor?.color ?? .white
+                    let isStroopColorDark = (engine.currentPrompt.displayColor?.color.luminance ?? 1.0) < 0.3
+                    
                     Text(engine.promptText.uppercased())
                         .font(.largeTitle)
                         .bold()
-                        // Prompt color is white
                         .foregroundColor(
-                            isStroop
-                                ? engine.currentPrompt.displayColor?.color
-                                : .white
+                            isStroop ? stroopColor : .white
                         )
                         .padding(.vertical, 12)
                         .padding(.horizontal, 28)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.black.opacity(0.5))
+                                .fill(
+                                    isStroop && isStroopColorDark
+                                    ? Color.white.opacity(0.9)
+                                    : Color.black.opacity(0.5)
+                                )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 14)
                                         .stroke(
                                             engine.switchOn
-                                                ? Color.red.opacity(0.6)
-                                                : Color.white.opacity(0.2),
+                                            ? Color.red.opacity(0.6)
+                                            : isStroopColorDark
+                                            ? Color.black.opacity(0.3)
+                                            : Color.white.opacity(0.2),
                                             lineWidth: 2
                                         )
                                 )
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
-
+                    
                     // Grid of Colors
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(engine.gridColors) { gameColor in
@@ -151,8 +157,8 @@ struct ClassicModeView: View {
                     )
                 }
             }
-            .blur(radius: showCountdown ? 8 : 0)
-            .allowsHitTesting(!showCountdown)
+            .blur(radius: showCountdown || showSettings ? 8 : 0)
+            .allowsHitTesting(!showCountdown && !showSettings)
 
             // Countdown overlay
             if showCountdown {
@@ -160,6 +166,12 @@ struct ClassicModeView: View {
                     showCountdown = false
                     engine.start()
                 }
+            }
+            
+            // Settings popup overlay
+            if showSettings {
+                SettingsPopupView(isPresented: $showSettings)
+                    .transition(.opacity)
             }
         }
 
@@ -225,9 +237,11 @@ struct ClassicModeView: View {
                     }
                 }
 
-                // Score
+                // Score and Settings
                 HStack {
                     Spacer()
+                    
+                    // Score
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("SCORE")
                             .font(.caption)
@@ -239,6 +253,18 @@ struct ClassicModeView: View {
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.6))
                     }
+                    .padding()
+                    // Settings button
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showSettings = true
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.trailing, 16)
                 }
             }
             .padding(.horizontal, 24)
@@ -262,9 +288,9 @@ struct ClassicModeView: View {
         // Load best score
         .onAppear {
             if isRapidMode {
-                    //AudioPlayer.shared.playMusic("Rapid Theme")
-                } else {
-                   // AudioPlayer.shared.playMusic("Classic Theme")
+                 AudioPlayer.shared.playMusic("Rapid Theme")
+            } else {
+                AudioPlayer.shared.playMusic("Classic Theme")
             }
             lastLives = engine.lives.current
             showCountdown = true

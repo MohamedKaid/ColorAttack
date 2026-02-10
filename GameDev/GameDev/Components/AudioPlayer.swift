@@ -16,7 +16,26 @@ class AudioPlayer: ObservableObject {
     //instance of audioplayer class(private means it can't be accessed outside of class)
     private var player: AVAudioPlayer?
 
+    private var currentFileName: String?
+    private var currentVolume: Float = 0.5
+    
+    // Published so UI can react to changes
+     @Published var isMuted: Bool {
+         didSet {
+             UserDefaults.standard.set(isMuted, forKey: "audioMuted")
+             if isMuted {
+                 player?.volume = 0
+             } else {
+                 player?.volume = currentVolume
+             }
+         }
+     }
+     
+    
     init() {
+        
+        self.isMuted = UserDefaults.standard.bool(forKey: "audioMuted")
+
            // Configure audio session for playback on iPhone
            do {
                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -35,7 +54,9 @@ class AudioPlayer: ObservableObject {
            
            do {
                player = try AVAudioPlayer(contentsOf: url)
-               player?.volume = volume
+               currentFileName = fileName
+               currentVolume = volume
+               player?.volume = isMuted ? 0 : volume
                player?.numberOfLoops = loops
                player?.play()
            } catch {
@@ -45,6 +66,12 @@ class AudioPlayer: ObservableObject {
 
     func stop() {
         player?.stop()
+        player = nil
+        currentFileName = nil
+    }
+    
+    func toggleMute() {
+        isMuted.toggle()
     }
     
 }

@@ -23,7 +23,7 @@ struct StartView: View {
                 Spacer()
                 
                 // Title Image
-                Image("Title")
+                Image("Logo")
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: 600)

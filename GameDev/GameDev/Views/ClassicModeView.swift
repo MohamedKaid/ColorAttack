@@ -251,8 +251,8 @@ struct ClassicModeView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         Text("Best: \(bestClassicScore)")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     .padding()
                     // Settings button

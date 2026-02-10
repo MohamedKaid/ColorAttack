@@ -261,6 +261,11 @@ struct ClassicModeView: View {
 
         // Load best score
         .onAppear {
+            if isRapidMode {
+                    //AudioPlayer.shared.playMusic("Rapid Theme")
+                } else {
+                   // AudioPlayer.shared.playMusic("Classic Theme")
+            }
             lastLives = engine.lives.current
             showCountdown = true
 

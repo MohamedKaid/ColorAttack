@@ -22,6 +22,13 @@ struct ModeSelectionView: View {
 
 
                 VStack {
+                    Spacer(minLength: 60)
+
+                    Text("SELECT MODE")
+                        .font(.custom("Bangers", size: 32))
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                    
                     Spacer(minLength: 40)
 
                     // Mode Cards ScrollView

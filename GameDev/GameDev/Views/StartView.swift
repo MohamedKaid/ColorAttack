@@ -57,6 +57,9 @@ struct StartView: View {
                 Spacer(minLength: 40)
             }
         }
+        .onAppear(){
+        // AudioPlayer.shared.playMusic("Game Theme 3")
+        }
     }
 }
 

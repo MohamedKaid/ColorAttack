@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ChaosModeView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var swapSides = false
@@ -103,8 +104,8 @@ struct ChaosModeView: View {
                             .font(.headline)
                             .foregroundColor(.white.opacity(0.9))
 
-                        Button("Restart") {
-                            showCountdown = true
+                        Button("Home") {
+                            dismiss()
                         }
                         .buttonStyle(.borderedProminent)
                     }

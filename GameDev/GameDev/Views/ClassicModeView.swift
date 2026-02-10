@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ClassicModeView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var lastLives: Int = 0
@@ -141,8 +142,8 @@ struct ClassicModeView: View {
                             .font(.headline)
                             .foregroundColor(.white.opacity(0.9))
 
-                        Button("Restart") {
-                            showCountdown = true
+                        Button("Home") {
+                            dismiss()
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -284,6 +285,7 @@ struct ClassicModeView: View {
                 lastLives = engine.lives.current
             }
         }
+
 
         // Load best score
         .onAppear {

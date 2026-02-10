@@ -148,8 +148,9 @@ final class GameEngine: ObservableObject {
     }
 
     func restart() {
-        start()
+        isGameOver = true
     }
+
 
     func handleTap(action: PlayerAction) {
         guard !isGameOver else { return }

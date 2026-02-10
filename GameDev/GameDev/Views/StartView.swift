@@ -33,6 +33,8 @@ struct StartView: View {
                 // Animated Shapes Bouncing
                 LottieView(animation: .named("finalShape"))
                     .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
+                    .frame(width: 280, height: 280)
+
 
                 // Start Button
                 NavigationLink {

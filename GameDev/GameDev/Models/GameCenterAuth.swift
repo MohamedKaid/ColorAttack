@@ -9,7 +9,7 @@ import GameKit
 import UIKit
 
 enum GameCenterAuth {
-    static func authenticate() {
+    static func authenticate(completion: (() -> Void)? = nil) {
         GKLocalPlayer.local.authenticateHandler = { viewController, error in
             if let viewController {
                 UIApplication.shared.topMostViewController?.present(viewController, animated: true)
@@ -23,12 +23,14 @@ enum GameCenterAuth {
 
             if GKLocalPlayer.local.isAuthenticated {
                 print("\(GKLocalPlayer.local.alias) is ready to play!")
+                completion?()
             } else {
                 print("Game Center not authenticated.")
             }
         }
     }
 }
+
 
 private extension UIApplication {
     var topMostViewController: UIViewController? {

@@ -358,12 +358,13 @@ final class GameEngine: ObservableObject {
 
     private func submitScoreIfNeeded() {
         guard !didSubmitScore else { return }
-        didSubmitScore = true
 
         guard GKLocalPlayer.local.isAuthenticated else {
-            print("Game Center not authenticated")
+            print("Game Center not authenticated (will not submit yet).")
             return
         }
+
+        didSubmitScore = true
 
         let leaderboardID = config.leaderboardID
         print("Submitting score \(score) to \(leaderboardID)")
@@ -376,9 +377,11 @@ final class GameEngine: ObservableObject {
                     player: GKLocalPlayer.local,
                     leaderboardIDs: [leaderboardID]
                 )
-                print("Score submitted:", score)
+                print("✅ Score submitted:", score)
             } catch {
-                print("Score submit failed:", error.localizedDescription)
+                print("❌ Score submit failed:", error.localizedDescription)
+                // optional: allow retry if it failed
+                didSubmitScore = false
             }
         }
     }

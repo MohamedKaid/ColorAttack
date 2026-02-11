@@ -19,6 +19,6 @@ struct ShapeCardView: View {
                     .font(.system(size: 40, weight: .bold))
                     .foregroundColor(.white.opacity(0.7))
             )
-            .frame(height: 120)
+            .frame(height: 100)
     }
 }

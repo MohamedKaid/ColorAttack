@@ -41,21 +41,7 @@ struct ChaosModeView: View {
                     // Instructions
                     ChaosInstructionView(text: engine.promptText)
                         .padding(.top)
-
-                    // Split screen (with swap)
-                    HStack(spacing: 24) {
-                        if swapSides {
-                            shapesColumn
-                            colorsColumn
-                        } else {
-                            colorsColumn
-                            shapesColumn
-                        }
-                    }
-                    .padding(.horizontal)
-                    .frame(maxWidth: 1200)
-                    .animation(.easeInOut(duration: 0.25), value: swapSides)
-
+                    
                     // Tap Timer (flashes under 1.0)
                     let isUrgent = engine.remainingTapTime < 1.0
 
@@ -86,7 +72,22 @@ struct ChaosModeView: View {
                         value: flashTimer
                     )
 
+                    // Split screen (with swap)
+                    HStack(spacing: 24) {
+                        if swapSides {
+                            shapesColumn
+                            colorsColumn
+                        } else {
+                            colorsColumn
+                            shapesColumn
+                        }
+                    }
+                    .padding(.horizontal)
+                    .frame(maxWidth: 1200)
+                    .animation(.easeInOut(duration: 0.25), value: swapSides)
+                    
                     Spacer()
+
                 }
 
                 // Game Over Overlay
@@ -137,20 +138,23 @@ struct ChaosModeView: View {
             ZStack {
                 // Mode Label
                 HStack {
-                    Text("CHAOS")
-                        .font(.headline)
-                        .bold()
+                    Text("Score to Beat: \(bestClassicScore)")
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.15))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                )
-                        )
+//                    Text("CHAOS")
+//                        .font(.headline)
+//                        .bold()
+//                        .foregroundColor(.white)
+//                        .padding(.horizontal, 12)
+//                        .padding(.vertical, 6)
+//                        .background(
+//                            Capsule()
+//                                .fill(Color.white.opacity(0.15))
+//                                .overlay(
+//                                    Capsule()
+//                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+//                                )
+//                        )
                     Spacer()
                 }
 
@@ -181,9 +185,9 @@ struct ChaosModeView: View {
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Best: \(bestClassicScore)")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
+//                        Text("Best: \(bestClassicScore)")
+//                            .font(.caption)
+//                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
             }

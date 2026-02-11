@@ -76,25 +76,6 @@ struct ClassicModeView: View {
                                 )
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
-                    
-                    // Grid of Colors
-                    let isNine = engine.gridColors.count == 9
-                    let gridSpacing: CGFloat = isNine ? 12 : 16
-
-                    LazyVGrid(columns: columns, spacing: gridSpacing) {
-                        ForEach(engine.gridColors) { gameColor in
-                            Button {
-                                engine.handleTap(action: .colorTap(gameColor))
-                            } label: {
-                                CardView(gameColor: gameColor)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(engine.isGameOver)
-                        }
-                    }
-                    .padding(isNine ? 10 : 16)
-                    .frame(maxWidth: 1100)
-
 
 
                     // Tap timer (Classic only)
@@ -128,7 +109,24 @@ struct ClassicModeView: View {
                             value: flashTimer
                         )
                     }
+                    
+                    // Grid of Colors
+                    let isNine = engine.gridColors.count == 9
+                    let gridSpacing: CGFloat = isNine ? 12 : 16
 
+                    LazyVGrid(columns: columns, spacing: gridSpacing) {
+                        ForEach(engine.gridColors) { gameColor in
+                            Button {
+                                engine.handleTap(action: .colorTap(gameColor))
+                            } label: {
+                                CardView(gameColor: gameColor)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(engine.isGameOver)
+                        }
+                    }
+                    .padding(isNine ? 10 : 16)
+                    .frame(maxWidth: 1100)
                     Spacer()
                 }
 

@@ -148,6 +148,7 @@ import SwiftUI
 struct ModeSelectionView: View {
     @State private var selectedMode: GameMode?
     @State private var currentIndex: Int = 0
+    @State private var dragX: CGFloat = 0   // ✅ NEW
 
     private let cardWidth: CGFloat = 280
     private let cardSpacing: CGFloat = 20
@@ -160,56 +161,85 @@ struct ModeSelectionView: View {
 
             VStack {
                 Spacer(minLength: 60)
-                
+
                 // Title
                 Text("SELECT MODE")
                     .font(.custom("Candy-Planet", size: 32))
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                
+
                 Spacer(minLength: 40)
 
-                // Carousel
-                GeometryReader { outerGeo in
-                    let screenMidX = outerGeo.size.width / 2
-                    let horizontalPadding = (outerGeo.size.width - cardWidth) / 2
-                    let totalCardWidth = cardWidth + cardSpacing
-                    
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: cardSpacing) {
-                            ForEach(Array(GameMode.allCases.enumerated()), id: \.element.id) { index, mode in
-                                
-                                GeometryReader { cardGeo in
-                                    let cardMidX = cardGeo.frame(in: .global).midX
-                                    let distance = cardMidX - screenMidX
-                                    let absDistance = abs(distance)
-                                    let scale = max(0.8, 1 - (absDistance / 500))
-                                    let opacity = max(0.5, 1 - (absDistance / 400))
-                                    
-                                    ModeCardView(
-                                        mode: mode,
-                                        isSelected: absDistance < totalCardWidth / 2,
-                                        onStart: { selectedMode = mode }
-                                    )
-                                    .scaleEffect(scale)
-                                    .opacity(opacity)
-                                    .onChange(of: absDistance < totalCardWidth / 2) { _, isCentered in
-                                        if isCentered && currentIndex != index {
-                                            currentIndex = index
-                                            let generator = UIImpactFeedbackGenerator(style: .light)
-                                            generator.impactOccurred()
-                                        }
-                                    }
-                                }
-                                .frame(width: cardWidth, height: 480)
-                            }
-                        }
-                        .scrollTargetLayout()
-                        .padding(.horizontal, horizontalPadding)
-                    }
-                    .scrollTargetBehavior(.viewAligned)
+                // ✅ Carousel (replaces the ScrollView block only)
+                ZStack {
+                    let modes = GameMode.allCases
+                    let count = modes.count
+                    let sideOffset = cardWidth + cardSpacing
+
+                    // Left card
+                    ModeCardView(
+                        mode: modes[wrappedIndex(currentIndex - 1, count)],
+                        isSelected: false,
+                        onStart: { selectedMode = modes[wrappedIndex(currentIndex - 1, count)] }
+                    )
+                    .frame(width: cardWidth, height: 480)
+                    .scaleEffect(0.88)
+                    .opacity(0.55)
+                    .offset(x: -sideOffset + dragX * 0.35)
+                    .allowsHitTesting(false)
+
+                    // Right card
+                    ModeCardView(
+                        mode: modes[wrappedIndex(currentIndex + 1, count)],
+                        isSelected: false,
+                        onStart: { selectedMode = modes[wrappedIndex(currentIndex + 1, count)] }
+                    )
+                    .frame(width: cardWidth, height: 480)
+                    .scaleEffect(0.88)
+                    .opacity(0.55)
+                    .offset(x: sideOffset + dragX * 0.35)
+                    .allowsHitTesting(false)
+
+                    // Center card
+                    ModeCardView(
+                        mode: modes[currentIndex],
+                        isSelected: true,
+                        onStart: { selectedMode = modes[currentIndex] }
+                    )
+                    .frame(width: cardWidth, height: 480)
+                    .offset(x: dragX)
                 }
                 .frame(height: 500)
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            dragX = value.translation.width
+                        }
+                        .onEnded { value in
+                            let threshold: CGFloat = 90
+                            let predicted = value.predictedEndTranslation.width
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+
+                            if predicted < -threshold {
+                                // swipe left -> next
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                    currentIndex = wrappedIndex(currentIndex + 1, GameMode.allCases.count)
+                                }
+                                generator.impactOccurred()
+                            } else if predicted > threshold {
+                                // swipe right -> prev
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                    currentIndex = wrappedIndex(currentIndex - 1, GameMode.allCases.count)
+                                }
+                                generator.impactOccurred()
+                            }
+
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                dragX = 0
+                            }
+                        }
+                )
 
                 Spacer()
 
@@ -246,6 +276,11 @@ struct ModeSelectionView: View {
         .navigationDestination(item: $selectedMode) { mode in
             destinationView(for: mode)
         }
+    }
+
+    // ✅ NEW helper (wrap around)
+    private func wrappedIndex(_ i: Int, _ count: Int) -> Int {
+        (i % count + count) % count
     }
 
     @ViewBuilder
@@ -299,6 +334,7 @@ struct ModeSelectionView: View {
         }
     }
 }
+
 
 #Preview("Mode Selection") {
     NavigationStack {

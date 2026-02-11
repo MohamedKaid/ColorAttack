@@ -122,7 +122,7 @@ final class ChaosRules: ModeRules, TimingRules {
     
     func tapTimeLimit(for round: Int) -> TimeInterval {
         let start: TimeInterval = 4.5     // much slower start
-        let min: TimeInterval = 1.8       // never too fast
+        let min: TimeInterval = 2.0       // never too fast
         let decayEvery: Int = 6            // slows down less often
         let decayAmount: TimeInterval = 0.2
 

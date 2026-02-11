@@ -36,7 +36,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		81D2CF162F3A20D8009AB0EF /* Exceptions for "GameDev" folder in "GameDev" target */ = {
+		811513162F3CBCAD0094AC20 /* Exceptions for "GameDev" folder in "GameDev" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -54,7 +54,7 @@
 		9DE225C22F28F31A0030570C /* GameDev */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				81D2CF162F3A20D8009AB0EF /* Exceptions for "GameDev" folder in "GameDev" target */,
+				811513162F3CBCAD0094AC20 /* Exceptions for "GameDev" folder in "GameDev" target */,
 			);
 			path = GameDev;
 			sourceTree = "<group>";
@@ -432,7 +432,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 2A965J3JGT;
+				DEVELOPMENT_TEAM = 7C7WV8TT97;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -465,7 +465,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = name.shahbain.GameDev;
+				PRODUCT_BUNDLE_IDENTIFIER = name.shahbain.colorFrenzy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
@@ -492,7 +492,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 2A965J3JGT;
+				DEVELOPMENT_TEAM = 7C7WV8TT97;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
@@ -525,7 +525,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = name.shahbain.GameDev;
+				PRODUCT_BUNDLE_IDENTIFIER = name.shahbain.colorFrenzy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;

@@ -41,21 +41,7 @@ struct ChaosModeView: View {
                     // Instructions
                     ChaosInstructionView(text: engine.promptText)
                         .padding(.top)
-
-                    // Split screen (with swap)
-                    HStack(spacing: 24) {
-                        if swapSides {
-                            shapesColumn
-                            colorsColumn
-                        } else {
-                            colorsColumn
-                            shapesColumn
-                        }
-                    }
-                    .padding(.horizontal)
-                    .frame(maxWidth: 1200)
-                    .animation(.easeInOut(duration: 0.25), value: swapSides)
-
+                    
                     // Tap Timer (flashes under 1.0)
                     let isUrgent = engine.remainingTapTime < 1.0
 
@@ -86,7 +72,22 @@ struct ChaosModeView: View {
                         value: flashTimer
                     )
 
+                    // Split screen (with swap)
+                    HStack(spacing: 24) {
+                        if swapSides {
+                            shapesColumn
+                            colorsColumn
+                        } else {
+                            colorsColumn
+                            shapesColumn
+                        }
+                    }
+                    .padding(.horizontal)
+                    .frame(maxWidth: 1200)
+                    .animation(.easeInOut(duration: 0.25), value: swapSides)
+                    
                     Spacer()
+
                 }
 
                 // Game Over Overlay

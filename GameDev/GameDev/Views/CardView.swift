@@ -21,7 +21,7 @@ struct CardView: View {
             .frame(height: 150)
             .overlay(
                 Text(gameColor.name)
-                    .font(.headline)
+                    .font(.system(size: 26, weight: .bold))
                     .bold()
                     .foregroundColor(.white)
                     .shadow(radius: 2)

@@ -77,21 +77,6 @@ struct ClassicModeView: View {
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
                     
-                    // Grid of Colors
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        ForEach(engine.gridColors) { gameColor in
-                            Button {
-                                engine.handleTap(action: .colorTap(gameColor))
-                            } label: {
-                                CardView(gameColor: gameColor)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(engine.isGameOver)
-                        }
-                    }
-                    .padding()
-                    .frame(maxWidth: 1100)
-
                     // Tap timer (Classic only)
                     if !isRapidMode {
                         let isUrgent = engine.remainingTapTime < 1.0
@@ -123,6 +108,21 @@ struct ClassicModeView: View {
                             value: flashTimer
                         )
                     }
+                    
+                    // Grid of Colors
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(engine.gridColors) { gameColor in
+                            Button {
+                                engine.handleTap(action: .colorTap(gameColor))
+                            } label: {
+                                CardView(gameColor: gameColor)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(engine.isGameOver)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: 1100)
 
                     Spacer()
                 }

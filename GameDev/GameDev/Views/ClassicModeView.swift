@@ -78,7 +78,10 @@ struct ClassicModeView: View {
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
                     
                     // Grid of Colors
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    let isNine = engine.gridColors.count == 9
+                    let gridSpacing: CGFloat = isNine ? 12 : 16
+
+                    LazyVGrid(columns: columns, spacing: gridSpacing) {
                         ForEach(engine.gridColors) { gameColor in
                             Button {
                                 engine.handleTap(action: .colorTap(gameColor))
@@ -89,8 +92,10 @@ struct ClassicModeView: View {
                             .disabled(engine.isGameOver)
                         }
                     }
-                    .padding()
+                    .padding(isNine ? 10 : 16)
                     .frame(maxWidth: 1100)
+
+
 
                     // Tap timer (Classic only)
                     if !isRapidMode {
@@ -181,20 +186,23 @@ struct ClassicModeView: View {
             ZStack {
                 // Mode label
                 HStack {
-                    Text(isRapidMode ? "RAPID" : "CLASSIC")
-                        .font(.headline)
+                    Text(isRapidMode ? "Score to Beat: \(bestClassicScore)" :"Score to Beat: \(bestClassicScore)")
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
-                        .bold()
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.15))
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                                )
-                        )
+//                    Text(isRapidMode ? "RAPID" : "CLASSIC")
+//                        .font(.headline)
+//                        .foregroundColor(.white)
+//                        .bold()
+//                        .padding(.horizontal, 12)
+//                        .padding(.vertical, 6)
+//                        .background(
+//                            Capsule()
+//                                .fill(Color.white.opacity(0.15))
+//                                .overlay(
+//                                    Capsule()
+//                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+//                                )
+//                        )
                     Spacer()
                 }
 
@@ -250,9 +258,7 @@ struct ClassicModeView: View {
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
-                        Text("Best: \(bestClassicScore)")
-                            .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.white)
+                        
                     }
                     .padding()
                     // Settings button

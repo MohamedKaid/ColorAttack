@@ -18,7 +18,7 @@ struct CardView: View {
                     .stroke(Color.white.opacity(0.35), lineWidth: 2)
             )
             .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
-            .frame(height: 150)
+            .frame(height: 120)
             .overlay(
                 Text(gameColor.name)
                     .font(.headline)
@@ -30,6 +30,8 @@ struct CardView: View {
             .shadow(radius: 6)
     }
 }
+
+
 
 
 

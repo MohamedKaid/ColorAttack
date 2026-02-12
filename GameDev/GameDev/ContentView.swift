@@ -27,6 +27,9 @@ struct ContentView: View {
         switch currentScreen {
         case .start:
             StartView(currentScreen: $currentScreen)
+                .onAppear {
+                    GameCenterAuth.authenticate()
+                }
             
         case .modeSelection:
             ModeSelectionView(currentScreen: $currentScreen)

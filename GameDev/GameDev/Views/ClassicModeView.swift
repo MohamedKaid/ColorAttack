@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct ClassicModeView: View {
-    @Environment(\.dismiss) private var dismiss
+    //@Environment(\.dismiss) private var dismiss
+    @Binding var currentScreen: AppScreen
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var lastLives: Int = 0
@@ -145,10 +146,24 @@ struct ClassicModeView: View {
                             .font(.headline)
                             .foregroundColor(.white.opacity(0.9))
 
-                        Button("Home") {
-                            dismiss()
+                        HStack(spacing: 16) {
+                            Button("Home") {
+                                engine.stop()
+                                currentScreen = .modeSelection
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.white)
+                            
+                            Button("Restart") {
+                                showCountdown = true
+                            }
+                            .buttonStyle(.borderedProminent)
                         }
-                        .buttonStyle(.borderedProminent)
+                        
+//                        Button("Home") {
+//                            dismiss()
+//                        }
+//                        .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
@@ -184,6 +199,14 @@ struct ClassicModeView: View {
             ZStack {
                 // Mode label
                 HStack {
+                    Button {
+                        engine.stop()
+                        currentScreen = .modeSelection
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                     Text(isRapidMode ? "Score to Beat: \(bestClassicScore)" :"Score to Beat: \(bestClassicScore)")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
@@ -318,36 +341,39 @@ struct ClassicModeView: View {
     }
 }
 
-#Preview("Classic Mode") {
-    let engine = GameEngine(
-        lives: Lives(max: 3),
-        colorPool: colorPool,
-        config: ModeConfig(
-            cardsPerGrid: 6,
-            tapTimeLimit: 2.5,
-            usesLives: true,
-            totalGameTimeLimit: nil,
-            leaderboardID: "com.example.ColorAttack.Classic"
-        ),
-        rules: ClassicRules()
-    )
 
-    ClassicModeView(engine: engine)
+#Preview("Classic Mode") {
+    ClassicModeView(
+        currentScreen: .constant(.classic),
+        engine: GameEngine(
+            lives: Lives(max: 3),
+            colorPool: colorPool,
+            config: ModeConfig(
+                cardsPerGrid: 6,
+                tapTimeLimit: 2.5,
+                usesLives: true,
+                totalGameTimeLimit: nil,
+                leaderboardID: "com.example.ColorAttack.Classic"
+            ),
+            rules: ClassicRules()
+        )
+    )
 }
 
 #Preview("Rapid Mode") {
-    let engine = GameEngine(
-        lives: Lives(max: 1),
-        colorPool: colorPool,
-        config: ModeConfig(
-            cardsPerGrid: 6,
-            tapTimeLimit: 120,
-            usesLives: false,
-            totalGameTimeLimit: 30,
-            leaderboardID: "com.example.ColorAttack.Rapid"
-        ),
-        rules: RapidRules()
+    ClassicModeView(
+        currentScreen: .constant(.rapid),
+        engine: GameEngine(
+            lives: Lives(max: 1),
+            colorPool: colorPool,
+            config: ModeConfig(
+                cardsPerGrid: 6,
+                tapTimeLimit: 120,
+                usesLives: false,
+                totalGameTimeLimit: 30,
+                leaderboardID: "com.example.ColorAttack.Rapid"
+            ),
+            rules: RapidRules()
+        )
     )
-
-    ClassicModeView(engine: engine)
 }

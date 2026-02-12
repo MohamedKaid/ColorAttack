@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct ChaosModeView: View {
-    @Environment(\.dismiss) private var dismiss
+    @Binding var currentScreen: AppScreen
+    //@Environment(\.dismiss) private var dismiss
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var swapSides = false
@@ -16,6 +17,8 @@ struct ChaosModeView: View {
     @State private var animateHearts = false
     @State private var flashTimer = false
     @State private var showCountdown = true
+    @State private var showSettings = false
+
 
     private let colorColumns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -106,9 +109,20 @@ struct ChaosModeView: View {
                             .foregroundColor(.white.opacity(0.9))
 
                         Button("Home") {
-                            dismiss()
+                            engine.stop()
+                            currentScreen = .modeSelection
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.white)
+                        
+                        Button("Restart") {
+                            showCountdown = true
                         }
                         .buttonStyle(.borderedProminent)
+//                        Button("Home") {
+//                            dismiss()
+//                        }
+//                        .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
@@ -131,6 +145,11 @@ struct ChaosModeView: View {
                     engine.start()
                 }
             }
+            
+            if showSettings {
+                SettingsPopupView(isPresented: $showSettings)
+                    .transition(.opacity)
+            }
         }
 
         // Header
@@ -138,6 +157,15 @@ struct ChaosModeView: View {
             ZStack {
                 // Mode Label
                 HStack {
+                    Button {
+                        engine.stop()
+                        currentScreen = .modeSelection
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    
                     Text("Score to Beat: \(bestClassicScore)")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
@@ -189,6 +217,17 @@ struct ChaosModeView: View {
 //                            .font(.caption)
 //                            .foregroundColor(.white.opacity(0.6))
                     }
+                    
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showSettings = true
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.trailing, 16)
                 }
             }
             .padding(.horizontal, 24)
@@ -317,18 +356,19 @@ struct ChaosInstructionView: View {
 }
 
 #Preview("Chaos Mode") {
-    let engine = GameEngine(
-        lives: Lives(max: 5),
-        colorPool: colorPool,
-        config: ModeConfig(
-            cardsPerGrid: 6,
-            tapTimeLimit: 2.5,
-            usesLives: true,
-            totalGameTimeLimit: nil,
-            leaderboardID: "com.example.ColorAttack.Chaos"
-        ),
-        rules: ChaosRules()
+    ChaosModeView(
+        currentScreen: .constant(.chaos),
+        engine: GameEngine(
+            lives: Lives(max: 5),
+            colorPool: colorPool,
+            config: ModeConfig(
+                cardsPerGrid: 6,
+                tapTimeLimit: 2.5,
+                usesLives: true,
+                totalGameTimeLimit: nil,
+                leaderboardID: "com.example.ColorAttack.Chaos"
+            ),
+            rules: ChaosRules()
+        )
     )
-
-    ChaosModeView(engine: engine)
 }

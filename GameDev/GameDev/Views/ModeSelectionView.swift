@@ -1,141 +1,3 @@
-////
-////  ModeSelectionView.swift
-////  GameDev
-////
-////  Created by Mohamed Shahbain on 2/4/26.
-////
-//import SwiftUI
-//
-//struct ModeSelectionView: View {
-//    @State private var selectedMode: GameMode?
-//
-//    var body: some View {
-//        GeometryReader { geo in
-//            ZStack {
-//                
-//                // Background
-//                Image("mode_select_bg")
-//                    .resizable()
-//                    .scaledToFill()
-//                    .frame(width: geo.size.width, height: geo.size.height)
-//
-//
-//
-//                VStack {
-//                    Spacer(minLength: 40)
-//
-//                    // Mode Cards ScrollView
-//                    GeometryReader { geo in
-//                        ScrollView(.horizontal, showsIndicators: false) {
-//                            HStack(spacing: 28) {
-//                                ForEach(GameMode.allCases) { mode in
-//                                    ModeCardView(mode: mode) {
-//                                        selectedMode = mode
-//                                    }
-//                                }
-//                            }
-//                            .frame(minWidth: geo.size.width)
-//                        }
-//                    }
-//                    .frame(height: 420)
-//
-//                    Spacer()
-//
-//                    // Game Mode Button
-//                    Text("GAME MODE")
-//                        .font(.title2)
-//                        .bold()
-//                        .foregroundColor(.white)
-//                        .padding(.horizontal, 36)
-//                        .padding(.vertical, 14)
-//                        .background(
-//                            RoundedRectangle(cornerRadius: 14)
-//                                .fill(Color.blue)
-//                        )
-//                        .shadow(radius: 8)
-//
-//                    Spacer(minLength: 40)
-//                }
-//            }
-//            .navigationDestination(item: $selectedMode) { mode in
-//                destinationView(for: mode)
-//            }
-//        }
-//        .ignoresSafeArea()
-//    }
-//
-//    // Game Modes
-//    @ViewBuilder
-//    private func destinationView(for mode: GameMode) -> some View {
-//        switch mode {
-//        case .classic:
-//            ClassicModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 3),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 2.5,
-//                        usesLives: true,
-//                        totalGameTimeLimit: nil,
-//                        leaderboardID: "com.example.ColorAttack.Classic"
-//                    ),
-//                    rules: ClassicRules()
-//                )
-//            )
-//
-//        case .rapid:
-//            ClassicModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 1),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 120,
-//                        usesLives: false,
-//                        totalGameTimeLimit: 30,
-//                        leaderboardID: "com.example.ColorAttack.Rapid"
-//                    ),
-//                    rules: RapidRules()
-//                )
-//            )
-//
-//        case .chaos:
-//            ChaosModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 5),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 2.5,
-//                        usesLives: true,
-//                        totalGameTimeLimit: nil,
-//                        leaderboardID: "com.example.ColorAttack.Chaos"
-//                    ),
-//                    rules: ChaosRules()
-//                )
-//            )
-//        }
-//    }
-//}
-//#Preview("Mode Selection") {
-//    ModeSelectionPreview()
-//}
-//
-//
-//// Preview
-//private struct ModeSelectionPreview: View {
-//    @State private var selectedMode: GameMode? = nil
-//    // Try: .classic, .rapid, .chaos
-//
-//    var body: some View {
-//        NavigationStack {
-//            ModeSelectionView()
-//        }
-//    }
-//}
-
-
 //
 //  ModeSelectionView.swift
 //  GameDev
@@ -146,9 +8,11 @@
 import SwiftUI
 
 struct ModeSelectionView: View {
-    @State private var selectedMode: GameMode?
+    @Binding var currentScreen: AppScreen
+    //@State private var selectedMode: GameMode?
     @State private var currentIndex: Int = 0
     @State private var dragX: CGFloat = 0   // ✅ NEW
+    @State private var showSettings = false // ✅ Settings popup state
 
     private let cardWidth: CGFloat = 280
     private let cardSpacing: CGFloat = 20
@@ -159,6 +23,7 @@ struct ModeSelectionView: View {
             GameBackground(mode: .menu)
                 .ignoresSafeArea()
 
+            // Main content (blurred when settings shown)
             VStack {
                 Spacer(minLength: 60)
 
@@ -180,7 +45,8 @@ struct ModeSelectionView: View {
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex - 1, count)],
                         isSelected: false,
-                        onStart: { selectedMode = modes[wrappedIndex(currentIndex - 1, count)] }
+                        onStart: { navigateToMode(modes[wrappedIndex(currentIndex - 1, count)]) }
+                        //onStart: { selectedMode = modes[wrappedIndex(currentIndex - 1, count)] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .scaleEffect(0.88)
@@ -192,7 +58,8 @@ struct ModeSelectionView: View {
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex + 1, count)],
                         isSelected: false,
-                        onStart: { selectedMode = modes[wrappedIndex(currentIndex + 1, count)] }
+                        onStart: { navigateToMode(modes[wrappedIndex(currentIndex + 1, count)]) }
+//                        onStart: { selectedMode = modes[wrappedIndex(currentIndex + 1, count)] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .scaleEffect(0.88)
@@ -204,7 +71,8 @@ struct ModeSelectionView: View {
                     ModeCardView(
                         mode: modes[currentIndex],
                         isSelected: true,
-                        onStart: { selectedMode = modes[currentIndex] }
+                        onStart: { navigateToMode(modes[currentIndex]) }
+                        //onStart: { selectedMode = modes[currentIndex] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .offset(x: dragX)
@@ -272,9 +140,60 @@ struct ModeSelectionView: View {
 
                 Spacer(minLength: 50)
             }
+            .blur(radius: showSettings ? 8 : 0)
+            .allowsHitTesting(!showSettings)
+
+            // Settings popup overlay
+            if showSettings {
+                SettingsPopupView(isPresented: $showSettings)
+                    .transition(.opacity)
+            }
+
+//        .navigationDestination(item: $selectedMode) { mode in
+//            destinationView(for: mode)
         }
-        .navigationDestination(item: $selectedMode) { mode in
-            destinationView(for: mode)
+        // ✅ Top bar — Back button (top left) + Settings gear (top right)
+        .safeAreaInset(edge: .top) {
+            HStack {
+                // Back button
+                Button {
+                    currentScreen = .start
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.15))
+                    )
+                }
+
+                Spacer()
+
+                // Settings button
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showSettings = true
+                    }
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title2)
+                        .foregroundColor(.white.opacity(0.7))
+                        .padding(10)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.15))
+                        )
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(Color.black.opacity(0.5))
         }
     }
 
@@ -282,62 +201,70 @@ struct ModeSelectionView: View {
     private func wrappedIndex(_ i: Int, _ count: Int) -> Int {
         (i % count + count) % count
     }
-
-    @ViewBuilder
-    private func destinationView(for mode: GameMode) -> some View {
+    
+    private func navigateToMode(_ mode: GameMode) {
         switch mode {
         case .classic:
-            ClassicModeView(
-                engine: GameEngine(
-                    lives: Lives(max: 3),
-                    colorPool: colorPool,
-                    config: ModeConfig(
-                        cardsPerGrid: 6,
-                        tapTimeLimit: 2.5,
-                        usesLives: true,
-                        totalGameTimeLimit: nil,
-                        leaderboardID: "com.example.ColorAttack.Classic"
-                    ),
-                    rules: ClassicRules()
-                )
-            )
+            currentScreen = .classic
         case .rapid:
-            ClassicModeView(
-                engine: GameEngine(
-                    lives: Lives(max: 1),
-                    colorPool: colorPool,
-                    config: ModeConfig(
-                        cardsPerGrid: 6,
-                        tapTimeLimit: 120,
-                        usesLives: false,
-                        totalGameTimeLimit: 30,
-                        leaderboardID: "com.example.ColorAttack.Rapid"
-                    ),
-                    rules: RapidRules()
-                )
-            )
+            currentScreen = .rapid
         case .chaos:
-            ChaosModeView(
-                engine: GameEngine(
-                    lives: Lives(max: 5),
-                    colorPool: colorPool,
-                    config: ModeConfig(
-                        cardsPerGrid: 6,
-                        tapTimeLimit: 2.5,
-                        usesLives: true,
-                        totalGameTimeLimit: nil,
-                        leaderboardID: "com.example.ColorAttack.Chaos"
-                    ),
-                    rules: ChaosRules()
-                )
-            )
+            currentScreen = .chaos
         }
     }
+
+//    @ViewBuilder
+//    private func destinationView(for mode: GameMode) -> some View {
+//        switch mode {
+//        case .classic:
+//            ClassicModeView(
+//                engine: GameEngine(
+//                    lives: Lives(max: 3),
+//                    colorPool: colorPool,
+//                    config: ModeConfig(
+//                        cardsPerGrid: 6,
+//                        tapTimeLimit: 2.5,
+//                        usesLives: true,
+//                        totalGameTimeLimit: nil,
+//                        leaderboardID: "com.example.ColorAttack.Classic"
+//                    ),
+//                    rules: ClassicRules()
+//                )
+//            )
+//        case .rapid:
+//            ClassicModeView(
+//                engine: GameEngine(
+//                    lives: Lives(max: 1),
+//                    colorPool: colorPool,
+//                    config: ModeConfig(
+//                        cardsPerGrid: 6,
+//                        tapTimeLimit: 120,
+//                        usesLives: false,
+//                        totalGameTimeLimit: 30,
+//                        leaderboardID: "com.example.ColorAttack.Rapid"
+//                    ),
+//                    rules: RapidRules()
+//                )
+//            )
+//        case .chaos:
+//            ChaosModeView(
+//                engine: GameEngine(
+//                    lives: Lives(max: 5),
+//                    colorPool: colorPool,
+//                    config: ModeConfig(
+//                        cardsPerGrid: 6,
+//                        tapTimeLimit: 2.5,
+//                        usesLives: true,
+//                        totalGameTimeLimit: nil,
+//                        leaderboardID: "com.example.ColorAttack.Chaos"
+//                    ),
+//                    rules: ChaosRules()
+//                )
+//            )
+//        }
 }
 
 
 #Preview("Mode Selection") {
-    NavigationStack {
-        ModeSelectionView()
-    }
+    ModeSelectionView(currentScreen: .constant(.modeSelection))
 }

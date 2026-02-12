@@ -11,6 +11,8 @@ import Lottie
 struct StartView: View {
     
     @State private var showSettings = false
+    @Binding var currentScreen: AppScreen
+
 
     var body: some View {
         ZStack {
@@ -38,8 +40,8 @@ struct StartView: View {
 
 
                 // Start Button
-                NavigationLink {
-                    ModeSelectionView()
+                Button {
+                    currentScreen = .modeSelection
                 } label: {
                     Text("START")
                         .font(.title)
@@ -101,6 +103,6 @@ struct StartView: View {
 
 #Preview {
     NavigationStack {
-        StartView()
+        StartView(currentScreen: .constant(.start))
     }
 }

@@ -19,13 +19,68 @@ let colorPool: [GameColor] = [
     GameColor(name: "Black",  color: Color(red: 0.15, green: 0.15, blue: 0.18)),
     GameColor(name: "Pink",   color: Color(red: 0.95, green: 0.45, blue: 0.60))
 ]
+
 struct ContentView: View {
+    @State private var currentScreen: AppScreen = .start
+    
     var body: some View {
-        NavigationStack {
-            StartView()
-        }
-        .onAppear {
-            GameCenterAuth.authenticate()
+        switch currentScreen {
+        case .start:
+            StartView(currentScreen: $currentScreen)
+            
+        case .modeSelection:
+            ModeSelectionView(currentScreen: $currentScreen)
+            
+        case .classic:
+            ClassicModeView(
+                currentScreen: $currentScreen,
+                engine: GameEngine(
+                    lives: Lives(max: 3),
+                    colorPool: colorPool,
+                    config: ModeConfig(
+                        cardsPerGrid: 6,
+                        tapTimeLimit: 2.5,
+                        usesLives: true,
+                        totalGameTimeLimit: nil,
+                        leaderboardID: "com.example.ColorAttack.Classic"
+                    ),
+                    rules: ClassicRules()
+                )
+            )
+            
+        case .rapid:
+            ClassicModeView(
+                currentScreen: $currentScreen,
+                engine: GameEngine(
+                    lives: Lives(max: 1),
+                    colorPool: colorPool,
+                    config: ModeConfig(
+                        cardsPerGrid: 6,
+                        tapTimeLimit: 120,
+                        usesLives: false,
+                        totalGameTimeLimit: 30,
+                        leaderboardID: "com.example.ColorAttack.Rapid"
+                    ),
+                    rules: RapidRules()
+                )
+            )
+            
+        case .chaos:
+            ChaosModeView(
+                currentScreen: $currentScreen,
+                engine: GameEngine(
+                    lives: Lives(max: 5),
+                    colorPool: colorPool,
+                    config: ModeConfig(
+                        cardsPerGrid: 6,
+                        tapTimeLimit: 2.5,
+                        usesLives: true,
+                        totalGameTimeLimit: nil,
+                        leaderboardID: "com.example.ColorAttack.Chaos"
+                    ),
+                    rules: ChaosRules()
+                )
+            )
         }
     }
 }

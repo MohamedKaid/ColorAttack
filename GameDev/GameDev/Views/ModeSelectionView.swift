@@ -9,13 +9,19 @@ import SwiftUI
 
 struct ModeSelectionView: View {
     @Binding var currentScreen: AppScreen
-    //@State private var selectedMode: GameMode?
     @State private var currentIndex: Int = 0
-    @State private var dragX: CGFloat = 0   // ✅ NEW
-    @State private var showSettings = false // ✅ Settings popup state
+    @State private var dragX: CGFloat = 0
+    @State private var showSettings = false
 
     private let cardWidth: CGFloat = 280
     private let cardSpacing: CGFloat = 20
+
+    // ✅ iPhone hides Chaos
+    private var visibleModes: [GameMode] {
+        UIDevice.current.userInterfaceIdiom == .phone
+        ? GameMode.allCases.filter { $0 != .chaos }
+        : GameMode.allCases
+    }
 
     var body: some View {
         ZStack {
@@ -35,9 +41,9 @@ struct ModeSelectionView: View {
 
                 Spacer(minLength: 40)
 
-                // ✅ Carousel (replaces the ScrollView block only)
+                // Carousel
                 ZStack {
-                    let modes = GameMode.allCases
+                    let modes = visibleModes
                     let count = modes.count
                     let sideOffset = cardWidth + cardSpacing
 
@@ -46,7 +52,6 @@ struct ModeSelectionView: View {
                         mode: modes[wrappedIndex(currentIndex - 1, count)],
                         isSelected: false,
                         onStart: { navigateToMode(modes[wrappedIndex(currentIndex - 1, count)]) }
-                        //onStart: { selectedMode = modes[wrappedIndex(currentIndex - 1, count)] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .scaleEffect(0.88)
@@ -59,7 +64,6 @@ struct ModeSelectionView: View {
                         mode: modes[wrappedIndex(currentIndex + 1, count)],
                         isSelected: false,
                         onStart: { navigateToMode(modes[wrappedIndex(currentIndex + 1, count)]) }
-//                        onStart: { selectedMode = modes[wrappedIndex(currentIndex + 1, count)] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .scaleEffect(0.88)
@@ -72,7 +76,6 @@ struct ModeSelectionView: View {
                         mode: modes[currentIndex],
                         isSelected: true,
                         onStart: { navigateToMode(modes[currentIndex]) }
-                        //onStart: { selectedMode = modes[currentIndex] }
                     )
                     .frame(width: cardWidth, height: 480)
                     .offset(x: dragX)
@@ -92,13 +95,13 @@ struct ModeSelectionView: View {
                             if predicted < -threshold {
                                 // swipe left -> next
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                    currentIndex = wrappedIndex(currentIndex + 1, GameMode.allCases.count)
+                                    currentIndex = wrappedIndex(currentIndex + 1, visibleModes.count)
                                 }
                                 generator.impactOccurred()
                             } else if predicted > threshold {
                                 // swipe right -> prev
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                    currentIndex = wrappedIndex(currentIndex - 1, GameMode.allCases.count)
+                                    currentIndex = wrappedIndex(currentIndex - 1, visibleModes.count)
                                 }
                                 generator.impactOccurred()
                             }
@@ -113,7 +116,7 @@ struct ModeSelectionView: View {
 
                 // Page Indicators
                 HStack(spacing: 12) {
-                    ForEach(Array(GameMode.allCases.enumerated()), id: \.element.id) { index, mode in
+                    ForEach(Array(visibleModes.enumerated()), id: \.element.id) { index, mode in
                         Circle()
                             .fill(currentIndex == index ? mode.color : Color.white.opacity(0.4))
                             .frame(
@@ -126,19 +129,23 @@ struct ModeSelectionView: View {
                 .padding(.bottom, 20)
 
                 // Current Mode Label
-                Text(GameMode.allCases[currentIndex].title)
+                Text(visibleModes[currentIndex].title)
                     .font(.custom("Candy-Planet", size: 24))
                     .foregroundColor(.white)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 12)
                     .background(
                         Capsule()
-                            .fill(GameMode.allCases[currentIndex].color.opacity(0.8))
-                            .shadow(color: GameMode.allCases[currentIndex].color.opacity(0.5), radius: 10)
+                            .fill(visibleModes[currentIndex].color.opacity(0.8))
+                            .shadow(color: visibleModes[currentIndex].color.opacity(0.5), radius: 10)
                     )
                     .animation(.easeInOut(duration: 0.2), value: currentIndex)
 
                 Spacer(minLength: 50)
+            }
+            // ✅ Safety clamp (prevents crash on iPhone)
+            .onAppear {
+                currentIndex = min(currentIndex, visibleModes.count - 1)
             }
             .blur(radius: showSettings ? 8 : 0)
             .allowsHitTesting(!showSettings)
@@ -148,14 +155,11 @@ struct ModeSelectionView: View {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
             }
-
-//        .navigationDestination(item: $selectedMode) { mode in
-//            destinationView(for: mode)
         }
-        // ✅ Top bar — Back button (top left) + Settings gear (top right)
+
+        // Top bar — Back + Settings
         .safeAreaInset(edge: .top) {
             HStack {
-                // Back button
                 Button {
                     currentScreen = .start
                 } label: {
@@ -175,7 +179,6 @@ struct ModeSelectionView: View {
 
                 Spacer()
 
-                // Settings button
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
                         showSettings = true
@@ -197,12 +200,17 @@ struct ModeSelectionView: View {
         }
     }
 
-    // ✅ NEW helper (wrap around)
+    // Helper (wrap around)
     private func wrappedIndex(_ i: Int, _ count: Int) -> Int {
         (i % count + count) % count
     }
-    
+
     private func navigateToMode(_ mode: GameMode) {
+        // Extra safety: Chaos should never be reachable on iPhone
+        if UIDevice.current.userInterfaceIdiom == .phone, mode == .chaos {
+            return
+        }
+
         switch mode {
         case .classic:
             currentScreen = .classic
@@ -212,6 +220,8 @@ struct ModeSelectionView: View {
             currentScreen = .chaos
         }
     }
+}
+
 
 //    @ViewBuilder
 //    private func destinationView(for mode: GameMode) -> some View {
@@ -262,7 +272,7 @@ struct ModeSelectionView: View {
 //                )
 //            )
 //        }
-}
+
 
 
 #Preview("Mode Selection") {

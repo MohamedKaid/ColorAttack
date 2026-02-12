@@ -195,6 +195,7 @@ struct ModeSelectionView: View {
                 }
             }
             .padding(.horizontal, 20)
+            .padding(.top, 24)
             .padding(.vertical, 12)
             .background(Color.black.opacity(0.5))
         }

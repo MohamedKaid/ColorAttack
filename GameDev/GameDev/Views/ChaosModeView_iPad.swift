@@ -9,16 +9,20 @@ import SwiftUI
 
 struct ChaosModeView_iPad: View {
     @Binding var currentScreen: AppScreen
-    //@Environment(\.dismiss) private var dismiss
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var swapSides = false
     @State private var lastLives: Int = 0
+    @State private var lastScore: Int = 0
     @State private var animateHearts = false
     @State private var flashTimer = false
     @State private var showCountdown = true
     @State private var showSettings = false
 
+    // Feedback states
+    @State private var showLifeLostFlash = false
+    @State private var feedbackText: String = ""
+    @State private var feedbackColor: Color = .clear
 
     private let colorColumns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -36,6 +40,15 @@ struct ChaosModeView_iPad: View {
             GameBackground(mode: .chaos)
                 .ignoresSafeArea()
 
+            // Life-lost red flash overlay
+            if showLifeLostFlash {
+                Color.red
+                    .opacity(0.25)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+
             // Game content
             ZStack {
                 VStack(spacing: 24) {
@@ -44,7 +57,10 @@ struct ChaosModeView_iPad: View {
                     // Instructions
                     ChaosInstructionView(text: engine.promptText)
                         .padding(.top)
-                    
+
+                    // Feedback toast
+                    feedbackToast
+
                     // Tap Timer (flashes under 1.0)
                     let isUrgent = engine.remainingTapTime < 1.0
 
@@ -88,9 +104,8 @@ struct ChaosModeView_iPad: View {
                     .padding(.horizontal)
                     .frame(maxWidth: 1200)
                     .animation(.easeInOut(duration: 0.25), value: swapSides)
-                    
-                    Spacer()
 
+                    Spacer()
                 }
 
                 // Game Over Overlay
@@ -114,15 +129,6 @@ struct ChaosModeView_iPad: View {
                         }
                         .buttonStyle(.bordered)
                         .tint(.blue)
-                        
-//                        Button("Restart") {
-//                            showCountdown = true
-//                        }
-//                        .buttonStyle(.borderedProminent)
-//                        Button("Home") {
-//                            dismiss()
-//                        }
-//                        .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
@@ -135,8 +141,8 @@ struct ChaosModeView_iPad: View {
                     )
                 }
             }
-            .blur(radius: showCountdown ? 8 : 0)
-            .allowsHitTesting(!showCountdown)
+            .blur(radius: showCountdown || showSettings ? 8 : 0)
+            .allowsHitTesting(!showCountdown && !showSettings)
 
             // Countdown overlay
             if showCountdown {
@@ -145,7 +151,7 @@ struct ChaosModeView_iPad: View {
                     engine.start()
                 }
             }
-            
+
             if showSettings {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
@@ -165,24 +171,10 @@ struct ChaosModeView_iPad: View {
                             .font(.title2)
                             .foregroundColor(.white.opacity(0.8))
                     }
-                    
+
                     Text("Score to Beat: \(bestClassicScore)")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
-//                    Text("CHAOS")
-//                        .font(.headline)
-//                        .bold()
-//                        .foregroundColor(.white)
-//                        .padding(.horizontal, 12)
-//                        .padding(.vertical, 6)
-//                        .background(
-//                            Capsule()
-//                                .fill(Color.white.opacity(0.15))
-//                                .overlay(
-//                                    Capsule()
-//                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-//                                )
-//                        )
                     Spacer()
                 }
 
@@ -212,12 +204,8 @@ struct ChaosModeView_iPad: View {
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
-                        
-//                        Text("Best: \(bestClassicScore)")
-//                            .font(.caption)
-//                            .foregroundColor(.white.opacity(0.6))
                     }
-                    
+
                     Button {
                         withAnimation(.easeOut(duration: 0.2)) {
                             showSettings = true
@@ -243,34 +231,101 @@ struct ChaosModeView_iPad: View {
                 swapSides = false
             }
         }
-        
-        // Heart loss animation
+
+        // MARK: - Life Lost Feedback
         .onChange(of: engine.lives.current) {
             if engine.lives.current < lastLives {
+                // Heart shrink
                 animateHearts = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                     animateHearts = false
                 }
+
+                // Red flash
+                withAnimation(.easeIn(duration: 0.1)) {
+                    showLifeLostFlash = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showLifeLostFlash = false
+                    }
+                }
+
+                // Toast
+                showFeedback(text: "−1 Life", color: .red)
             }
             lastLives = engine.lives.current
         }
-        
+
+        // MARK: - Score Change Feedback
+        .onChange(of: engine.score) {
+            if engine.score > lastScore {
+                showFeedback(text: "+\(engine.score - lastScore)", color: .green)
+            } else if engine.score < lastScore {
+                showFeedback(text: "\(engine.score - lastScore)", color: .red)
+            }
+            lastScore = engine.score
+        }
+
         .onAppear {
             lastLives = engine.lives.current
+            lastScore = engine.score
             showCountdown = true
 
             let leaderboardID = "com.example.ColorAttack.Chaos"
-            
+
             loadMyBestScore(leaderboardID: leaderboardID) { score in
                 bestClassicScore = score
             }
         }
-
-        .onAppear {
-            lastLives = engine.lives.current
-            showCountdown = true
-        }
         .onDisappear { engine.stop() }
+    }
+
+    // MARK: - Feedback Toast
+
+    private var feedbackToast: some View {
+        ZStack {
+            if !feedbackText.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(feedbackColor)
+                    Text(feedbackText)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(feedbackColor.opacity(0.3))
+                        .overlay(
+                            Capsule()
+                                .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
+                        )
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            }
+        }
+        .frame(height: 36)
+        .animation(.easeOut(duration: 0.2), value: feedbackText)
+    }
+
+    // MARK: - Helpers
+
+    private func showFeedback(text: String, color: Color) {
+        feedbackText = text
+        feedbackColor = color
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if feedbackText == text {
+                withAnimation {
+                    feedbackText = ""
+                }
+            }
+        }
     }
 
     // Color Column
@@ -294,7 +349,7 @@ struct ChaosModeView_iPad: View {
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     // Shapes Column
     private var shapesColumn: some View {
         VStack(spacing: 12) {
@@ -356,7 +411,7 @@ struct ChaosInstructionView: View {
 }
 
 #Preview("Chaos Mode") {
-    ChaosModeView(
+    ChaosModeView_iPad(
         currentScreen: .constant(.chaos),
         engine: GameEngine(
             lives: Lives(max: 5),

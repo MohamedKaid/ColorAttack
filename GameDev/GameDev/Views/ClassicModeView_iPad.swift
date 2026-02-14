@@ -8,27 +8,32 @@
 import SwiftUI
 
 struct ClassicModeView_iPad: View {
-    //@Environment(\.dismiss) private var dismiss
     @Binding var currentScreen: AppScreen
     @StateObject var engine: GameEngine
     @State private var bestClassicScore = 0
     @State private var lastLives: Int = 0
+    @State private var lastScore: Int = 0
     @State private var animateHearts = false
     @State private var flashTimer = false
     @State private var showCountdown = true
     @State private var showSettings = false
+    
+    // Feedback states
+    @State private var showLifeLostFlash = false
+    @State private var shakeOffset: CGFloat = 0
+    @State private var showCorrectIndicator = false
+    @State private var feedbackText: String = ""
+    @State private var feedbackColor: Color = .clear
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
         count: 3
     )
 
-    // Show New background
     private var backgroundMode: GameBackground.GameMode {
         engine.config.totalGameTimeLimit == nil ? .classic : .rapid
     }
     
-    // Whether Rapid Mode is running
     private var isRapidMode: Bool {
         engine.config.totalGameTimeLimit != nil
     }
@@ -38,6 +43,15 @@ struct ClassicModeView_iPad: View {
             // Background
             GameBackground(mode: backgroundMode)
                 .ignoresSafeArea()
+
+            // Life-lost red flash overlay
+            if showLifeLostFlash {
+                Color.red
+                    .opacity(0.25)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
 
             // Game content
             ZStack {
@@ -78,6 +92,34 @@ struct ClassicModeView_iPad: View {
                         )
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
 
+                    // Feedback toast (correct / wrong)
+                    ZStack {
+                        if !feedbackText.isEmpty {
+                            HStack(spacing: 6) {
+                                Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .foregroundColor(feedbackColor)
+                                Text(feedbackText)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(feedbackColor.opacity(0.3))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
+                                    )
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.8).combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                        }
+                    }
+                    .frame(height: 36)
+                    .animation(.easeOut(duration: 0.2), value: feedbackText)
 
                     // Tap timer (Classic only)
                     if !isRapidMode {
@@ -130,6 +172,7 @@ struct ClassicModeView_iPad: View {
                     .frame(maxWidth: 1100)
                     Spacer()
                 }
+                .offset(x: shakeOffset)
 
                 // Game Over Overlay
                 if engine.isGameOver {
@@ -153,17 +196,7 @@ struct ClassicModeView_iPad: View {
                             }
                             .buttonStyle(.bordered)
                             .tint(.blue)
-                            
-//                            Button("Restart") {
-//                                showCountdown = true
-//                            }
-//                            .buttonStyle(.borderedProminent)
                         }
-                        
-//                        Button("Home") {
-//                            dismiss()
-//                        }
-//                        .buttonStyle(.borderedProminent)
                     }
                     .padding(40)
                     .background(
@@ -207,29 +240,14 @@ struct ClassicModeView_iPad: View {
                             .font(.title2)
                             .foregroundColor(.white.opacity(0.8))
                     }
-                    Text(isRapidMode ? "Score to Beat: \(bestClassicScore)" :"Score to Beat: \(bestClassicScore)")
+                    Text("Score to Beat: \(bestClassicScore)")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.white)
-//                    Text(isRapidMode ? "RAPID" : "CLASSIC")
-//                        .font(.headline)
-//                        .foregroundColor(.white)
-//                        .bold()
-//                        .padding(.horizontal, 12)
-//                        .padding(.vertical, 6)
-//                        .background(
-//                            Capsule()
-//                                .fill(Color.white.opacity(0.15))
-//                                .overlay(
-//                                    Capsule()
-//                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-//                                )
-//                        )
                     Spacer()
                 }
 
                 // Lives/Timer center
                 if isRapidMode {
-                    // RAPID: Show timer
                     let remaining = engine.remainingGameTime ?? engine.config.totalGameTimeLimit ?? 0
                     let isUrgent = remaining <= 5
                     
@@ -251,7 +269,6 @@ struct ClassicModeView_iPad: View {
                         value: flashTimer
                     )
                 } else {
-                    // CLASSIC: Show hearts
                     HStack(spacing: 12) {
                         ForEach(0..<engine.lives.current, id: \.self) { _ in
                             Image(systemName: "heart.fill")
@@ -271,7 +288,6 @@ struct ClassicModeView_iPad: View {
                 HStack {
                     Spacer()
                     
-                    // Score
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("SCORE")
                             .font(.caption)
@@ -279,10 +295,9 @@ struct ClassicModeView_iPad: View {
                         Text("\(engine.score)")
                             .font(.system(size: 32, weight: .bold))
                             .foregroundColor(.white)
-                        
                     }
                     .padding()
-                    // Settings button
+                    
                     Button {
                         withAnimation(.easeOut(duration: 0.2)) {
                             showSettings = true
@@ -300,28 +315,54 @@ struct ClassicModeView_iPad: View {
             .background(Color.black.opacity(0.5))
         }
 
-        // Heart loss animation (Classic only)
+        // MARK: - Life Lost Feedback
         .onChange(of: engine.lives.current) {
             if !isRapidMode {
                 if engine.lives.current < lastLives {
+                    // Heart shrink animation
                     animateHearts = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         animateHearts = false
                     }
+                    
+                    // Red flash
+                    withAnimation(.easeIn(duration: 0.1)) {
+                        showLifeLostFlash = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showLifeLostFlash = false
+                        }
+                    }
+                                        
+                    // Toast
+                    showFeedback(text: "−1 Life", color: .red)
                 }
                 lastLives = engine.lives.current
             }
         }
 
+        // MARK: - Score Change Feedback
+        .onChange(of: engine.score) {
+            if engine.score > lastScore {
+                showFeedback(text: "+\(engine.score - lastScore)", color: .green)
+            } else if engine.score < lastScore && isRapidMode {
+                showFeedback(text: "\(engine.score - lastScore)", color: .red)
+                
+                // Shake on wrong tap in rapid too
+            }
+            lastScore = engine.score
+        }
 
         // Load best score
         .onAppear {
             if isRapidMode {
-                 AudioPlayer.shared.playMusic("Rapid Theme")
+                AudioPlayer.shared.playMusic("Rapid Theme")
             } else {
                 AudioPlayer.shared.playMusic("Classic Theme")
             }
             lastLives = engine.lives.current
+            lastScore = engine.score
             showCountdown = true
 
             let leaderboardID = isRapidMode
@@ -335,10 +376,27 @@ struct ClassicModeView_iPad: View {
         .onDisappear { engine.stop() }
     }
 
+    // MARK: - Helpers
+
     private func formatTime(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded(.down)))
         return String(format: "%d:%02d", total / 60, total % 60)
     }
+    
+    /// Shows a brief feedback toast that auto-dismisses
+    private func showFeedback(text: String, color: Color) {
+        feedbackText = text
+        feedbackColor = color
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if feedbackText == text {
+                withAnimation {
+                    feedbackText = ""
+                }
+            }
+        }
+    }
+    
 }
 
 

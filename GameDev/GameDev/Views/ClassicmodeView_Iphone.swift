@@ -13,10 +13,16 @@ struct ClassicModeView_iPhone: View {
 
     @State private var bestClassicScore = 0
     @State private var lastLives: Int = 0
+    @State private var lastScore: Int = 0
     @State private var animateHearts = false
     @State private var flashTimer = false
     @State private var showCountdown = true
     @State private var showSettings = false
+
+    // Feedback states
+    @State private var showLifeLostFlash = false
+    @State private var feedbackText: String = ""
+    @State private var feedbackColor: Color = .clear
 
     private var isRapidMode: Bool { engine.config.totalGameTimeLimit != nil }
 
@@ -32,6 +38,15 @@ struct ClassicModeView_iPhone: View {
             ZStack {
                 backgroundLayer
 
+                // Life-lost red flash overlay
+                if showLifeLostFlash {
+                    Color.red
+                        .opacity(0.25)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                }
+
                 mainContent(width: width, layout: layout)
 
                 overlays
@@ -41,6 +56,9 @@ struct ClassicModeView_iPhone: View {
             }
             .onChange(of: engine.lives.current) {
                 handleLivesChange()
+            }
+            .onChange(of: engine.score) {
+                handleScoreChange()
             }
             .onAppear {
                 handleAppear()
@@ -74,6 +92,9 @@ struct ClassicModeView_iPhone: View {
 
             promptView(width: width)
 
+            // Feedback toast
+            feedbackToast
+
             if !isRapidMode {
                 tapTimerView
             }
@@ -85,6 +106,41 @@ struct ClassicModeView_iPhone: View {
         .blur(radius: showCountdown || showSettings ? 8 : 0)
         .allowsHitTesting(!showCountdown && !showSettings)
     }
+
+    // MARK: - Feedback Toast
+
+    private var feedbackToast: some View {
+        ZStack {
+            if !feedbackText.isEmpty {
+                HStack(spacing: 5) {
+                    Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(feedbackColor)
+                        .font(.system(size: 14, weight: .bold))
+                    Text(feedbackText)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(feedbackColor.opacity(0.3))
+                        .overlay(
+                            Capsule()
+                                .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
+                        )
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            }
+        }
+        .frame(height: 28)
+        .animation(.easeOut(duration: 0.2), value: feedbackText)
+    }
+
+    // MARK: - Prompt
 
     private func promptView(width: CGFloat) -> some View {
         let isStroop = engine.currentPrompt.displayColor != nil
@@ -115,6 +171,8 @@ struct ClassicModeView_iPhone: View {
             )
     }
 
+    // MARK: - Tap Timer
+
     private var tapTimerView: some View {
         let isUrgent = engine.remainingTapTime < 1.0
 
@@ -141,6 +199,8 @@ struct ClassicModeView_iPhone: View {
         )
     }
 
+    // MARK: - Grid
+
     private func gridView(layout: PhoneLayout) -> some View {
         let isNine = engine.gridColors.count == 9
         let gridSpacing: CGFloat = isNine ? 12 : 16
@@ -159,6 +219,8 @@ struct ClassicModeView_iPhone: View {
         .padding(isNine ? 10 : 16)
         .frame(maxWidth: 1100)
     }
+
+    // MARK: - Overlays
 
     private var overlays: some View {
         ZStack {
@@ -200,11 +262,6 @@ struct ClassicModeView_iPhone: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(.blue)
-
-//                    Button("Restart") {
-//                        showCountdown = true
-//                    }
-//                    .buttonStyle(.borderedProminent)
                 }
             }
             .padding(22)
@@ -219,6 +276,8 @@ struct ClassicModeView_iPhone: View {
             .padding(.horizontal, 18)
         }
     }
+
+    // MARK: - Header
 
     @ViewBuilder
     private func phoneHeader(width: CGFloat) -> some View {
@@ -310,14 +369,39 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
+    // MARK: - Event Handlers
+
     private func handleLivesChange() {
         if engine.lives.current < lastLives {
+            // Heart shrink
             animateHearts = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                 animateHearts = false
             }
+
+            // Red flash
+            withAnimation(.easeIn(duration: 0.1)) {
+                showLifeLostFlash = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showLifeLostFlash = false
+                }
+            }
+
+            // Toast
+            showFeedback(text: "−1 Life", color: .red)
         }
         lastLives = engine.lives.current
+    }
+
+    private func handleScoreChange() {
+        if engine.score > lastScore {
+            showFeedback(text: "+\(engine.score - lastScore)", color: .green)
+        } else if engine.score < lastScore && isRapidMode {
+            showFeedback(text: "\(engine.score - lastScore)", color: .red)
+        }
+        lastScore = engine.score
     }
 
     private func handleAppear() {
@@ -328,6 +412,7 @@ struct ClassicModeView_iPhone: View {
         }
 
         lastLives = engine.lives.current
+        lastScore = engine.score
         showCountdown = true
 
         let leaderboardID = isRapidMode
@@ -339,8 +424,60 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
+    // MARK: - Helpers
+
     private func formatTime(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded(.down)))
         return String(format: "%d:%02d", total / 60, total % 60)
     }
+
+    private func showFeedback(text: String, color: Color) {
+        feedbackText = text
+        feedbackColor = color
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if feedbackText == text {
+                withAnimation {
+                    feedbackText = ""
+                }
+            }
+        }
+    }
+}
+
+
+#Preview("Classic Mode") {
+    ClassicModeView(
+        currentScreen: .constant(.classic),
+        engine: GameEngine(
+            lives: Lives(max: 3),
+            colorPool: colorPool,
+            config: ModeConfig(
+                cardsPerGrid: 6,
+                tapTimeLimit: 2.5,
+                usesLives: true,
+                totalGameTimeLimit: nil,
+                leaderboardID: "com.example.ColorAttack.Classic"
+            ),
+            rules: ClassicRules()
+        )
+    )
+}
+
+#Preview("Rapid Mode") {
+    ClassicModeView(
+        currentScreen: .constant(.rapid),
+        engine: GameEngine(
+            lives: Lives(max: 1),
+            colorPool: colorPool,
+            config: ModeConfig(
+                cardsPerGrid: 6,
+                tapTimeLimit: 120,
+                usesLives: false,
+                totalGameTimeLimit: 30,
+                leaderboardID: "com.example.ColorAttack.Rapid"
+            ),
+            rules: RapidRules()
+        )
+    )
 }

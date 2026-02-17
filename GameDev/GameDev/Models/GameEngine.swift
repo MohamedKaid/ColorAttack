@@ -378,9 +378,9 @@ final class GameEngine: ObservableObject {
                     player: GKLocalPlayer.local,
                     leaderboardIDs: [leaderboardID]
                 )
-                print("✅ Score submitted:", score)
+                print("Score submitted:", score)
             } catch {
-                print("❌ Score submit failed:", error.localizedDescription)
+                print("Score submit failed:", error.localizedDescription)
                 // optional: allow retry if it failed
                 didSubmitScore = false
             }

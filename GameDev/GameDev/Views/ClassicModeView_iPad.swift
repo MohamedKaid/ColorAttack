@@ -261,7 +261,19 @@ struct ClassicModeView_iPad: View {
                             .foregroundColor(.white)
                     }
                     .scaleEffect(flashTimer ? 1.15 : 1.0)
-                    .onChange(of: isUrgent) { flashTimer = isUrgent }
+                    .onChange(of: isUrgent){
+                        flashTimer = isUrgent
+                        if isUrgent {
+                                AudioPlayer.shared.playSFX("clockTimer")
+                                
+                                // Stop the clock timer SFX after 5 seconds
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                                    AudioPlayer.shared.stopSFX("clockTimer")
+                                }
+                            } else {
+                                AudioPlayer.shared.stopSFX("clockTimer")
+                            }
+                    }
                     .animation(
                         flashTimer
                         ? .easeInOut(duration: 0.4).repeatForever(autoreverses: true)
@@ -356,11 +368,12 @@ struct ClassicModeView_iPad: View {
 
         // Load best score
         .onAppear {
-            if isRapidMode {
-                AudioPlayer.shared.playMusic("Rapid Theme")
-            } else {
-                AudioPlayer.shared.playMusic("Classic Theme")
-            }
+//            if isRapidMode {
+//                AudioPlayer.shared.playMusic("Rapid Theme")
+//            } else {
+//                AudioPlayer.shared.playMusic("Classic Theme")
+//            }
+            AudioPlayer.shared.pauseMusic()
             lastLives = engine.lives.current
             lastScore = engine.score
             showCountdown = true

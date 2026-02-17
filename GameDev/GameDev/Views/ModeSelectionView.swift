@@ -16,7 +16,7 @@ struct ModeSelectionView: View {
     private let cardWidth: CGFloat = 280
     private let cardSpacing: CGFloat = 20
 
-    // ✅ iPhone hides Chaos
+    // Makes sure iPhone hides Chaos
     private var visibleModes: [GameMode] {
         UIDevice.current.userInterfaceIdiom == .phone
         ? GameMode.allCases.filter { $0 != .chaos }
@@ -47,7 +47,7 @@ struct ModeSelectionView: View {
                     let count = modes.count
                     let sideOffset = cardWidth + cardSpacing
 
-                    // Left card
+                    // Left card(smaller, dimmer, unclickable)
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex - 1, count)],
                         isSelected: false,
@@ -59,7 +59,7 @@ struct ModeSelectionView: View {
                     .offset(x: -sideOffset + dragX * 0.35)
                     .allowsHitTesting(false)
 
-                    // Right card
+                    // Right card(smaller, dimmer, unclickable)
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex + 1, count)],
                         isSelected: false,
@@ -143,7 +143,7 @@ struct ModeSelectionView: View {
 
                 Spacer(minLength: 50)
             }
-            // ✅ Safety clamp (prevents crash on iPhone)
+            // Safety clamp (prevents crash on iPhone)
             .onAppear {
                 currentIndex = min(currentIndex, visibleModes.count - 1)
             }
@@ -201,7 +201,7 @@ struct ModeSelectionView: View {
         }
     }
 
-    // Helper (wrap around)
+    // Wrap Around Helper function
     private func wrappedIndex(_ i: Int, _ count: Int) -> Int {
         (i % count + count) % count
     }
@@ -222,59 +222,6 @@ struct ModeSelectionView: View {
         }
     }
 }
-
-
-//    @ViewBuilder
-//    private func destinationView(for mode: GameMode) -> some View {
-//        switch mode {
-//        case .classic:
-//            ClassicModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 3),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 2.5,
-//                        usesLives: true,
-//                        totalGameTimeLimit: nil,
-//                        leaderboardID: "com.example.ColorAttack.Classic"
-//                    ),
-//                    rules: ClassicRules()
-//                )
-//            )
-//        case .rapid:
-//            ClassicModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 1),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 120,
-//                        usesLives: false,
-//                        totalGameTimeLimit: 30,
-//                        leaderboardID: "com.example.ColorAttack.Rapid"
-//                    ),
-//                    rules: RapidRules()
-//                )
-//            )
-//        case .chaos:
-//            ChaosModeView(
-//                engine: GameEngine(
-//                    lives: Lives(max: 5),
-//                    colorPool: colorPool,
-//                    config: ModeConfig(
-//                        cardsPerGrid: 6,
-//                        tapTimeLimit: 2.5,
-//                        usesLives: true,
-//                        totalGameTimeLimit: nil,
-//                        leaderboardID: "com.example.ColorAttack.Chaos"
-//                    ),
-//                    rules: ChaosRules()
-//                )
-//            )
-//        }
-
-
 
 #Preview("Mode Selection") {
     ModeSelectionView(currentScreen: .constant(.modeSelection))

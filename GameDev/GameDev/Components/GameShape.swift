@@ -11,8 +11,6 @@ enum GameShape: String, CaseIterable, Identifiable, Equatable {
     case square
     case triangle
     case star
-   // case diamond
-   // case hexagon
     case heart
     case bolt
 
@@ -28,10 +26,6 @@ enum GameShape: String, CaseIterable, Identifiable, Equatable {
             return "triangle.fill"
         case .star:
             return "star.fill"
-//        case .diamond:
-//            return "diamond.fill"
-//        case .hexagon:
-//            return "hexagon.fill"
         case .heart:
             return "heart.fill"
         case .bolt:

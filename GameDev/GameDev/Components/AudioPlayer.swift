@@ -60,7 +60,6 @@ class AudioPlayer: ObservableObject {
         }
     }
     
-    // MARK: - Music
     
     //open the music file
     func playMusic(_ fileName: String, type: String = "wav", volume: Float = 0.5, loops: Int = -1) {
@@ -92,12 +91,12 @@ class AudioPlayer: ObservableObject {
         currentMusicFileName = nil
     }
     
-    // Pause music (e.g., during gameplay if you want SFX only)
+    // Pause music
     func pauseMusic() {
         musicPlayer?.pause()
     }
     
-    // Resume music (e.g., returning to menu)
+    // Resume music
     func resumeMusic() {
         guard let player = musicPlayer else { return }
         player.volume = isMusicMuted ? 0 : currentMusicVolume
@@ -108,41 +107,33 @@ class AudioPlayer: ObservableObject {
         isMusicMuted.toggle()
     }
     
-    // MARK: - Sound Effects
+    // Sound Effects
     
-    /// Play a one-shot sound effect
-    /// - Parameters:
-    ///   - fileName: Name of the audio file (without extension)
-    ///   - type: File extension (default "wav")
-    ///   - volume: Playback volume 0.0–1.0 (default 1.0)
+    // Play a one-shot sound effect
     func playSFX(_ fileName: String, type: String = "mp3", volume: Float = 1.0) {
-        // ✅ Respect SFX mute setting
         guard !isSFXMuted else { return }
         
-        guard let url = Bundle.main.url(forResource: fileName, withExtension: type) else {
-            print("ERROR: Could not find SFX file \(fileName).\(type)")
-            return
-        }
+        let url = Bundle.main.url(forResource: fileName, withExtension: type)
+        guard let url else { return }
         
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.volume = volume
-            player.numberOfLoops = 0  // play once
-            player.play()
-            
-            // ✅ Store reference so it doesn't get deallocated mid-playback
+            player.numberOfLoops = 0
+            player.prepareToPlay()
+            //let success = player.play()
             sfxPlayers[fileName] = player
-            
-            // ✅ Clean up after playback finishes
-            DispatchQueue.main.asyncAfter(deadline: .now() + player.duration + 0.1) { [weak self] in
-                self?.sfxPlayers.removeValue(forKey: fileName)
-            }
         } catch {
-            print("ERROR: Could not play SFX file:", error)
+            print("4. Error: \(error)")
         }
     }
     
-    // ✅ Stop all sound effects
+    func stopSFX(_ fileName: String) {
+        sfxPlayers[fileName]?.stop()
+        sfxPlayers.removeValue(forKey: fileName)
+    }
+    
+    // Stop all sound effects
     func stopAllSFX() {
         sfxPlayers.values.forEach { $0.stop() }
         sfxPlayers.removeAll()
@@ -152,14 +143,14 @@ class AudioPlayer: ObservableObject {
         isSFXMuted.toggle()
     }
     
-    // MARK: - Stop Everything
+    // Stop Everything
     
     func stopAll() {
         stopMusic()
         stopAllSFX()
     }
     
-    // ✅ Mute/unmute everything at once
+    // Mute/unmute everything at once
     func toggleAllMute() {
         if isAllMuted {
             isMusicMuted = false

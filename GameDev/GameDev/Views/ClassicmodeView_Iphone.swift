@@ -107,7 +107,7 @@ struct ClassicModeView_iPhone: View {
         .allowsHitTesting(!showCountdown && !showSettings)
     }
 
-    // MARK: - Feedback Toast
+    // Feedback Toast
 
     private var feedbackToast: some View {
         ZStack {
@@ -140,7 +140,7 @@ struct ClassicModeView_iPhone: View {
         .animation(.easeOut(duration: 0.2), value: feedbackText)
     }
 
-    // MARK: - Prompt
+    // Prompt
 
     private func promptView(width: CGFloat) -> some View {
         let isStroop = engine.currentPrompt.displayColor != nil
@@ -171,7 +171,7 @@ struct ClassicModeView_iPhone: View {
             )
     }
 
-    // MARK: - Tap Timer
+    // Tap Timer
 
     private var tapTimerView: some View {
         let isUrgent = engine.remainingTapTime < 1.0
@@ -199,7 +199,7 @@ struct ClassicModeView_iPhone: View {
         )
     }
 
-    // MARK: - Grid
+    // Grid
 
     private func gridView(layout: PhoneLayout) -> some View {
         let isNine = engine.gridColors.count == 9
@@ -220,7 +220,7 @@ struct ClassicModeView_iPhone: View {
         .frame(maxWidth: 1100)
     }
 
-    // MARK: - Overlays
+    // Overlays
 
     private var overlays: some View {
         ZStack {
@@ -277,7 +277,7 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
-    // MARK: - Header
+    // Header
 
     @ViewBuilder
     private func phoneHeader(width: CGFloat) -> some View {
@@ -369,7 +369,7 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
-    // MARK: - Event Handlers
+    // Event Handlers
 
     private func handleLivesChange() {
         if engine.lives.current < lastLives {
@@ -424,7 +424,7 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
-    // MARK: - Helpers
+    // Helpers
 
     private func formatTime(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded(.down)))

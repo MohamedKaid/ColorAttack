@@ -2,25 +2,18 @@
 //  ClassicRules.swift
 //  GameDev
 //
-//  Created by Mohamed Shahbain on 1/28/26.
-//
-
-//  Classic mode rulebook:
-//  - Starts simple (tap color)
-//  - Introduces "DON'T TAP"
-//  - Increases grid size
-//  - Speeds up over time
+//  Created by Mohamed Shahbain on 2/2/26.
 //
 
 import SwiftUI
 
-final class ClassicRules: ModeRules, TimingRules{
+final class ClassicRules: ModeRules, TimingRules {
     
     // How many rounds before we add more colors
     private let difficultyStep = 15
     private let firstStep = 4
     
-    //Rounds after which "DON'T TAP" can appear
+    // Rounds after which "DON'T TAP" can appear
     private let switchStartRound = 5
     
     // Probability of it switching
@@ -31,12 +24,6 @@ final class ClassicRules: ModeRules, TimingRules{
 
     // Chance (0–1) that Stroop is applied once unlocked
     private let stroopChance: Double = 0.4
-    
-    // Chance that a "DON'T TAP" prompt uses a color NOT on the grid
-    private let offGridChance: Double = 0.3
-
-    //Minimum round before off-grid prompts are allowed
-    private let offGridStartRound = 1000000000
     
     private var lastTargetName: String? = nil
     
@@ -53,7 +40,7 @@ final class ClassicRules: ModeRules, TimingRules{
         switch round {
         case 0..<firstStep:
             gridSize = 3
-        case firstStep..<(difficultyStep):
+        case firstStep..<difficultyStep:
             gridSize = 6
         default:
             gridSize = 9
@@ -73,30 +60,14 @@ final class ClassicRules: ModeRules, TimingRules{
         let canSwitch = round >= switchStartRound
         let switchOn = canSwitch && Double.random(in: 0...1) < switchChance
 
-        let useOffGrid =
-            switchOn &&
-            round >= offGridStartRound &&
-            Double.random(in: 0...1) < offGridChance
-
-        var candidates: [String]
-
-        if useOffGrid {
-            // Pick a color NOT in the grid
-            let gridNames = Set(grid.map { $0.name })
-            candidates = pool
-                .map { $0.name }
-                .filter { !gridNames.contains($0) }
-        } else {
-            // Normal on-grid candidates
-            candidates = grid.map { $0.name }
-        }
+        var candidates = grid.map { $0.name }
 
         if let last = lastTargetName, candidates.count > 1 {
             candidates.removeAll { $0 == last }
         }
 
         let targetName = candidates.randomElement() ?? "?"
-        lastTargetName = targetName   
+        lastTargetName = targetName
 
         let text = switchOn
             ? "DON'T TAP \(targetName.uppercased())"
@@ -106,8 +77,6 @@ final class ClassicRules: ModeRules, TimingRules{
 
         if round >= stroopStartRound,
            Double.random(in: 0...1) < stroopChance {
-
-            // Pick a DIFFERENT color than the target
             let otherColors = pool.filter { $0.name.uppercased() != targetName.uppercased() }
             displayColor = otherColors.randomElement()
         }
@@ -175,11 +144,11 @@ final class ClassicRules: ModeRules, TimingRules{
             .capitalized
     }
     
-    // Limit for tapping(gets lower as you go)
+    // Limit for tapping (gets lower as you go)
     func tapTimeLimit(for round: Int) -> TimeInterval {
-        let start: TimeInterval = 2.5   // slower start
-        let min: TimeInterval = 0.8      // more forgiving minimum
-        let decayEvery: Int = 8          // slow down every N rounds
+        let start: TimeInterval = 2.5
+        let min: TimeInterval = 0.8
+        let decayEvery: Int = 8
         let decayAmount: TimeInterval = 0.1
         
         let steps = round / decayEvery

@@ -213,7 +213,7 @@ struct ChaosModeView_iPhone: View {
         }
     }
 
-    // MARK: - Logic
+    // Logic
     private func handleLivesChange() {
         if engine.lives.current < lastLives {
             animateHearts = true

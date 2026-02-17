@@ -126,7 +126,7 @@ private struct TwinklingStarsView: View {
         ZStack {
             Canvas { context, size in
                 
-                // === LAYER 1: Tiny background stars ===
+                // Layer 1: Tiny background stars
                 srand48(100)
                 for i in 0..<350 {
                     var x = drand48() * size.width
@@ -134,7 +134,7 @@ private struct TwinklingStarsView: View {
                     let baseSize = drand48() * 1.4 + 0.3
                     let baseOpacity = drand48() * 0.5 + 0.15
                     
-                    // MORE tiny stars move, BIGGER movement
+                    // Movement for the stars
                     let movePattern = i % 4
                     switch movePattern {
                     case 0:
@@ -167,6 +167,7 @@ private struct TwinklingStarsView: View {
                         ? baseSize * 2.2
                         : baseSize
                     
+                    // Star Struct
                     let rect = CGRect(
                         x: x - starSize / 2,
                         y: y - starSize / 2,
@@ -178,7 +179,7 @@ private struct TwinklingStarsView: View {
                     context.fill(Path(ellipseIn: rect), with: .color(.white))
                 }
                 
-                // === LAYER 2: Medium stars (MORE movement) ===
+                // Layer 2: Medium Sized Stars with more movement and twinkle
                 srand48(200)
                 for i in 0..<120 {
                     var x = drand48() * size.width
@@ -186,7 +187,7 @@ private struct TwinklingStarsView: View {
                     let baseSize = drand48() * 3.0 + 1.5
                     let baseOpacity = drand48() * 0.4 + 0.5
                     
-                    // ALL medium stars move, MUCH bigger range
+                    // Stars have a larger range than previous layer
                     let movePattern = i % 5
                     switch movePattern {
                     case 0:
@@ -236,7 +237,7 @@ private struct TwinklingStarsView: View {
                     context.fill(Path(ellipseIn: rect), with: .color(.white))
                 }
                 
-                // === LAYER 3: Bright glowing stars (DRAMATIC movement) ===
+                // Layer 3: Bright Glowing Stars
                 srand48(300)
                 for i in 0..<25 {
                     var x = drand48() * size.width
@@ -350,7 +351,7 @@ private struct TwinklingStarsView: View {
                 }
             }
             
-            // === SHOOTING STARS ===
+            //  Shooting Stars
             if shootingStar1Active {
                 ShootingStarView(color: .white)
                     .rotationEffect(.degrees(40))
@@ -400,7 +401,7 @@ private struct TwinklingStarsView: View {
             twinkleSlow = true
         }
         
-        // Drift X - SLOWER for more noticeable movement
+        // Drift X - slower for more noticeable movement
         withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
             driftX = true
         }
@@ -474,7 +475,7 @@ private struct TwinklingStarsView: View {
     }
 }
 
-// MARK: - Shooting Star View
+// Shooting Star View
 private struct ShootingStarView: View {
     let color: Color
     
@@ -491,7 +492,7 @@ private struct ShootingStarView: View {
             .shadow(color: color.opacity(0.6), radius: 4)
     }
 }
-// MARK: - Previews
+// Previews
 
 #Preview("All Modes") {
     TabView {

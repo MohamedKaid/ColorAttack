@@ -232,7 +232,7 @@ struct ChaosModeView_iPad: View {
             }
         }
 
-        // MARK: - Life Lost Feedback
+        // Life Lost Feedback
         .onChange(of: engine.lives.current) {
             if engine.lives.current < lastLives {
                 // Heart shrink
@@ -257,7 +257,7 @@ struct ChaosModeView_iPad: View {
             lastLives = engine.lives.current
         }
 
-        // MARK: - Score Change Feedback
+        // Score Change Feedback
         .onChange(of: engine.score) {
             if engine.score > lastScore {
                 showFeedback(text: "+\(engine.score - lastScore)", color: .green)
@@ -281,7 +281,7 @@ struct ChaosModeView_iPad: View {
         .onDisappear { engine.stop() }
     }
 
-    // MARK: - Feedback Toast
+    // Feedback Toast
 
     private var feedbackToast: some View {
         ZStack {
@@ -313,7 +313,7 @@ struct ChaosModeView_iPad: View {
         .animation(.easeOut(duration: 0.2), value: feedbackText)
     }
 
-    // MARK: - Helpers
+    // Helpers
 
     private func showFeedback(text: String, color: Color) {
         feedbackText = text

@@ -8,11 +8,11 @@
 import SwiftUI
 import Lottie
 
+
 struct StartView: View {
     
     @State private var showSettings = false
     @Binding var currentScreen: AppScreen
-
 
     var body: some View {
         ZStack {
@@ -25,7 +25,6 @@ struct StartView: View {
                 Spacer()
                 
                 // Title Image
-
                 Image("newLogo")
                     .resizable()
                     .scaledToFit()
@@ -37,7 +36,6 @@ struct StartView: View {
                 LottieView(animation: .named("finalShape"))
                     .playbackMode(.playing(.toProgress(1, loopMode: .loop)))
                     .frame(width: 280, height: 280)
-
 
                 // Start Button
                 Button {
@@ -64,38 +62,32 @@ struct StartView: View {
                 Spacer(minLength: 40)
             }
             
-            // Settings button (top right)
-            VStack {
-                HStack {
-                    Spacer()
-                    
-                    Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            showSettings = true
-                        }
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.title)
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(12)
-                            .background(
-                                Circle()
-                                    .fill(Color.white.opacity(0.15))
-                            )
-                    }
-                    .padding(.trailing, 20)
-                    .padding(.top, 20)
-                }
-                Spacer()
-            }
-            
             // Settings popup overlay
             if showSettings {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
             }
         }
-        .onAppear(){
+        // Settings gear pinned to top-right
+        .overlay(alignment: .topTrailing) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showSettings = true
+                }
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.title)
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(12)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.15))
+                    )
+            }
+            .padding(.trailing, 20)
+            .padding(.top, 20)
+        }
+        .onAppear {
             AudioPlayer.shared.playMusic("Game Theme 3")
         }
     }

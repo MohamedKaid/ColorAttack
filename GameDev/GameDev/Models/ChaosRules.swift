@@ -12,6 +12,7 @@ final class ChaosRules: ModeRules, TimingRules {
     // Track required targets for the round
     private let shapes = GameShape.allCases
     
+    // Tracked to avoid repeats
     private var lastColorTarget: String? = nil
     private var lastShapeTarget: String? = nil
 
@@ -31,7 +32,7 @@ final class ChaosRules: ModeRules, TimingRules {
         pool: [GameColor]
     ) -> (prompt: Prompt, switchOn: Bool) {
 
-        // MARK: - Color selection (no back-to-back repeats)
+        // Color selection (no back-to-back repeats)
         var colorCandidates = grid.map { $0.name.uppercased() }
 
         if let last = lastColorTarget, colorCandidates.count > 1 {
@@ -41,7 +42,7 @@ final class ChaosRules: ModeRules, TimingRules {
         let color = colorCandidates.randomElement() ?? grid.first!.name.uppercased()
         lastColorTarget = color
 
-        // MARK: - Shape selection (no back-to-back repeats)
+        // Shape selection (no back-to-back repeats)
         var shapeCandidates = shapes.map { $0.rawValue.uppercased() }
 
         if let last = lastShapeTarget, shapeCandidates.count > 1 {
@@ -51,7 +52,7 @@ final class ChaosRules: ModeRules, TimingRules {
         let shape = shapeCandidates.randomElement() ?? shapes.first!.rawValue.uppercased()
         lastShapeTarget = shape
 
-        // MARK: - DON'T TAP gating
+        // DON'T TAP gating
         let allowDontTap = round >= 5
 
         let colorDontTap = allowDontTap && Bool.random()

@@ -26,7 +26,7 @@ final class RapidRules: ModeRules {
 
         var candidates = grid.map { $0.name }
 
-        // ✅ Remove last target if possible
+        // Remove last target if possible
         if let last = lastTargetName, candidates.count > 1 {
             candidates.removeAll { $0 == last }
         }

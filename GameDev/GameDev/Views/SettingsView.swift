@@ -28,7 +28,7 @@ struct SettingsPopupView: View {
                     .font(.custom("Candy-Planet", size: 28))
                     .foregroundColor(.white)
 
-                // ✅ Music toggle
+                // Music toggle
                 HStack {
                     Image(systemName: audio.isMusicMuted ? "speaker.slash.fill" : "music.note")
                         .font(.title2)
@@ -50,7 +50,7 @@ struct SettingsPopupView: View {
                 }
                 .padding(.horizontal, 20)
 
-                // ✅ SFX toggle
+                // SFX toggle
                 HStack {
                     Image(systemName: audio.isSFXMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                         .font(.title2)

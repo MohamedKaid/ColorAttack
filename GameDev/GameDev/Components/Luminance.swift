@@ -7,23 +7,16 @@
 
 import SwiftUI
 
+// Used for determining the background of the prompts to ensure color contrast
 extension Color {
     var luminance: Double {
-        #if os(iOS)
         let uiColor = UIColor(self)
         var r: CGFloat = 0
         var g: CGFloat = 0
         var b: CGFloat = 0
         var a: CGFloat = 0
         uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        #else
-        let nsColor = NSColor(self).usingColorSpace(.deviceRGB) ?? .black
-        let r = nsColor.redComponent
-        let g = nsColor.greenComponent
-        let b = nsColor.blueComponent
-        #endif
 
-        // Standard WCAG luminance formula
         return 0.2126 * Double(r) +
                0.7152 * Double(g) +
                0.0722 * Double(b)

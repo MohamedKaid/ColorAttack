@@ -13,13 +13,15 @@ struct ModeSelectionView: View {
     @State private var dragX: CGFloat = 0
     @State private var showSettings = false
 
-    private let cardWidth: CGFloat = 280
-    private let cardSpacing: CGFloat = 20
+    // Reduced card size for iPhone
+    private let cardWidth: CGFloat = 240
+    private let cardHeight: CGFloat = 380
+    private let cardSpacing: CGFloat = 16
 
-    // Makes sure iPhone hides Chaos
+    // Hides Chaos on iPhone
     private var visibleModes: [GameMode] {
         UIDevice.current.userInterfaceIdiom == .phone
-        ? GameMode.allCases.filter { $0 != .chaos }
+        ? GameMode.allCases.filter { mode in mode != .chaos }
         : GameMode.allCases
     }
 
@@ -29,17 +31,18 @@ struct ModeSelectionView: View {
             GameBackground(mode: .menu)
                 .ignoresSafeArea()
 
-            // Main content (blurred when settings shown)
-            VStack {
-                Spacer(minLength: 60)
+            // Main Content
+            VStack(spacing: 0) {
+                Spacer(minLength: 20)
 
                 // Title
                 Text("SELECT MODE")
-                    .font(.custom("Candy-Planet", size: 32))
+                    .font(.custom("Candy-Planet", size: 26))
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                    .padding(.top, 8)
 
-                Spacer(minLength: 40)
+                Spacer(minLength: 20)
 
                 // Carousel
                 ZStack {
@@ -47,40 +50,40 @@ struct ModeSelectionView: View {
                     let count = modes.count
                     let sideOffset = cardWidth + cardSpacing
 
-                    // Left card(smaller, dimmer, unclickable)
+                    // Left Card
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex - 1, count)],
                         isSelected: false,
                         onStart: { navigateToMode(modes[wrappedIndex(currentIndex - 1, count)]) }
                     )
-                    .frame(width: cardWidth, height: 480)
+                    .frame(width: cardWidth, height: cardHeight)
                     .scaleEffect(0.88)
-                    .opacity(0.55)
+                    .opacity(0.5)
                     .offset(x: -sideOffset + dragX * 0.35)
                     .allowsHitTesting(false)
 
-                    // Right card(smaller, dimmer, unclickable)
+                    // Right Card
                     ModeCardView(
                         mode: modes[wrappedIndex(currentIndex + 1, count)],
                         isSelected: false,
                         onStart: { navigateToMode(modes[wrappedIndex(currentIndex + 1, count)]) }
                     )
-                    .frame(width: cardWidth, height: 480)
+                    .frame(width: cardWidth, height: cardHeight)
                     .scaleEffect(0.88)
-                    .opacity(0.55)
+                    .opacity(0.5)
                     .offset(x: sideOffset + dragX * 0.35)
                     .allowsHitTesting(false)
 
-                    // Center card
+                    // Center Card
                     ModeCardView(
                         mode: modes[currentIndex],
                         isSelected: true,
                         onStart: { navigateToMode(modes[currentIndex]) }
                     )
-                    .frame(width: cardWidth, height: 480)
+                    .frame(width: cardWidth, height: cardHeight)
                     .offset(x: dragX)
                 }
-                .frame(height: 500)
+                .frame(height: cardHeight + 20)
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture()
@@ -88,18 +91,16 @@ struct ModeSelectionView: View {
                             dragX = value.translation.width
                         }
                         .onEnded { value in
-                            let threshold: CGFloat = 90
+                            let threshold: CGFloat = 70
                             let predicted = value.predictedEndTranslation.width
                             let generator = UIImpactFeedbackGenerator(style: .light)
 
                             if predicted < -threshold {
-                                // swipe left -> next
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                                     currentIndex = wrappedIndex(currentIndex + 1, visibleModes.count)
                                 }
                                 generator.impactOccurred()
                             } else if predicted > threshold {
-                                // swipe right -> prev
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                                     currentIndex = wrappedIndex(currentIndex - 1, visibleModes.count)
                                 }
@@ -112,65 +113,66 @@ struct ModeSelectionView: View {
                         }
                 )
 
-                Spacer()
+                Spacer(minLength: 16)
 
                 // Page Indicators
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     ForEach(Array(visibleModes.enumerated()), id: \.element.id) { index, mode in
                         Circle()
                             .fill(currentIndex == index ? mode.color : Color.white.opacity(0.4))
                             .frame(
-                                width: currentIndex == index ? 12 : 8,
-                                height: currentIndex == index ? 12 : 8
+                                width: currentIndex == index ? 10 : 7,
+                                height: currentIndex == index ? 10 : 7
                             )
                             .animation(.spring(response: 0.3), value: currentIndex)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 12)
 
                 // Current Mode Label
                 Text(visibleModes[currentIndex].title)
-                    .font(.custom("Candy-Planet", size: 24))
+                    .font(.custom("Candy-Planet", size: 20))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 40)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 10)
                     .background(
                         Capsule()
                             .fill(visibleModes[currentIndex].color.opacity(0.8))
-                            .shadow(color: visibleModes[currentIndex].color.opacity(0.5), radius: 10)
+                            .shadow(color: visibleModes[currentIndex].color.opacity(0.5), radius: 8)
                     )
                     .animation(.easeInOut(duration: 0.2), value: currentIndex)
 
-                Spacer(minLength: 50)
+                Spacer(minLength: 30)
             }
-            // Safety clamp (prevents crash on iPhone)
             .onAppear {
                 currentIndex = min(currentIndex, visibleModes.count - 1)
             }
             .blur(radius: showSettings ? 8 : 0)
             .allowsHitTesting(!showSettings)
 
-            // Settings popup overlay
+            // Settings Overlay
             if showSettings {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
             }
         }
 
-        // Top bar — Back + Settings
+        // Top Bar
         .safeAreaInset(edge: .top) {
             HStack {
+                // Back Button
                 Button {
                     currentScreen = .start
                 } label: {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
                         Text("Back")
+                            .font(.system(size: 14, weight: .semibold))
                     }
-                    .font(.headline)
                     .foregroundColor(.white.opacity(0.8))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.15))
@@ -179,39 +181,39 @@ struct ModeSelectionView: View {
 
                 Spacer()
 
+                // Settings Button
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
                         showSettings = true
                     }
                 } label: {
                     Image(systemName: "gearshape.fill")
-                        .font(.title2)
+                        .font(.system(size: 18))
                         .foregroundColor(.white.opacity(0.7))
-                        .padding(10)
+                        .padding(9)
                         .background(
                             Circle()
                                 .fill(Color.white.opacity(0.15))
                         )
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 24)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
             .background(Color.black.opacity(0.5))
         }
     }
 
-    // Wrap Around Helper function
+    // MARK: - Helpers
+
     private func wrappedIndex(_ i: Int, _ count: Int) -> Int {
         (i % count + count) % count
     }
 
     private func navigateToMode(_ mode: GameMode) {
-        // Extra safety: Chaos should never be reachable on iPhone
         if UIDevice.current.userInterfaceIdiom == .phone, mode == .chaos {
             return
         }
-
         switch mode {
         case .classic:
             currentScreen = .classic

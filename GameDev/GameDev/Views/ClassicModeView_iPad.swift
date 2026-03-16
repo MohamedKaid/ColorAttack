@@ -17,6 +17,8 @@ struct ClassicModeView_iPad: View {
     @State private var flashTimer = false
     @State private var showCountdown = true
     @State private var showSettings = false
+    @State private var showLeaderboard = false
+
     
     // Feedback states
     @State private var showLifeLostFlash = false
@@ -24,6 +26,7 @@ struct ClassicModeView_iPad: View {
     @State private var showCorrectIndicator = false
     @State private var feedbackText: String = ""
     @State private var feedbackColor: Color = .clear
+    
 
     private let columns = Array(
         repeating: GridItem(.flexible(), spacing: 16),
@@ -225,7 +228,44 @@ struct ClassicModeView_iPad: View {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
             }
+            VStack {
+                Spacer()
+
+                Button {
+                    showLeaderboard = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trophy.fill")
+                        Text("Leaderboard")
+                            .fontWeight(.semibold)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [.purple, .blue],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .foregroundColor(.white)
+                    .clipShape(Capsule())
+                }
+                .padding(.bottom, 20)
+            }
         }
+        .sheet(isPresented: $showLeaderboard) {
+            let leaderboardID = isRapidMode
+                ? "com.example.ColorAttack.Rapid"
+                : "com.example.ColorAttack.Classic"
+            
+            LeaderBoardView(leaderboardID: leaderboardID)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+
+
 
         // Header
         .safeAreaInset(edge: .top) {
@@ -327,7 +367,7 @@ struct ClassicModeView_iPad: View {
             .background(Color.black.opacity(0.5))
         }
 
-        // MARK: - Life Lost Feedback
+        //Life Lost Feedback
         .onChange(of: engine.lives.current) {
             if !isRapidMode {
                 if engine.lives.current < lastLives {
@@ -354,7 +394,7 @@ struct ClassicModeView_iPad: View {
             }
         }
 
-        // MARK: - Score Change Feedback
+        //Score Change Feedback
         .onChange(of: engine.score) {
             if engine.score > lastScore {
                 showFeedback(text: "+\(engine.score - lastScore)", color: .green)
@@ -388,15 +428,15 @@ struct ClassicModeView_iPad: View {
         }
         .onDisappear { engine.stop() }
     }
-
-    // MARK: - Helpers
+        
+    //Helpers
 
     private func formatTime(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded(.down)))
         return String(format: "%d:%02d", total / 60, total % 60)
     }
     
-    /// Shows a brief feedback toast that auto-dismisses
+    
     private func showFeedback(text: String, color: Color) {
         feedbackText = text
         feedbackColor = color

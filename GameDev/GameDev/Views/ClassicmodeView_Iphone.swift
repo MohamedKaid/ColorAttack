@@ -18,6 +18,8 @@ struct ClassicModeView_iPhone: View {
     @State private var flashTimer = false
     @State private var showCountdown = true
     @State private var showSettings = false
+    @State private var showLeaderboard = false
+    @State private var leaderboardDetent: PresentationDetent = .medium
 
     // Feedback states
     @State private var showLifeLostFlash = false
@@ -50,6 +52,11 @@ struct ClassicModeView_iPhone: View {
                 mainContent(width: width, layout: layout)
 
                 overlays
+            }
+            .sheet(isPresented: $showLeaderboard) {
+                LeaderBoardView(leaderboardID: engine.config.leaderboardID)
+                    .presentationDetents([.medium, .large], selection: $leaderboardDetent)
+                    .presentationDragIndicator(.visible)
             }
             .safeAreaInset(edge: .top) {
                 phoneHeader(width: width)
@@ -319,6 +326,18 @@ struct ClassicModeView_iPhone: View {
                     .font(.system(size: valueSize, weight: .heavy))
                     .foregroundColor(.white)
             }
+            
+            Button {
+                leaderboardDetent = .medium
+                showLeaderboard = true
+            } label: {
+                Image(systemName: "trophy.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.85))
+                    .padding(8)
+                    .background(Circle().fill(Color.black.opacity(0.25)))
+            }
+
 
             Button {
                 withAnimation(.easeOut(duration: 0.2)) {
@@ -343,11 +362,11 @@ struct ClassicModeView_iPhone: View {
             let remaining = engine.remainingGameTime ?? engine.config.totalGameTimeLimit ?? 0
             let isUrgent = remaining <= 5
 
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: "clock.fill")
                     .foregroundColor(isUrgent ? .red : .yellow)
                 Text(formatTime(remaining))
-                    .font(.system(size: valueSize, weight: .heavy))
+                    .font(.system(size: valueSize, weight: .medium))
                     .foregroundColor(.white)
             }
             .scaleEffect(flashTimer ? 1.08 : 1.0)

@@ -32,25 +32,25 @@ struct ModeConfig {
     }
 }
 
-// A player's action in a round
+//player's action
 enum PlayerAction {
     case noTap
     case colorTap(GameColor)
     case shapeTap(GameShape)
 }
 
-// Prompt shown to the player
+//shows to the player
 struct Prompt {
     var text: String
     var displayColor: GameColor? = nil
 }
 
-// Optional: rules can dynamically change tap time by round
+
 protocol TimingRules {
     func tapTimeLimit(for round: Int) -> TimeInterval
 }
 
-// Rules contract for each mode
+// Rules for each mode
 protocol ModeRules {
     func makeGrid(from pool: [GameColor], cardsPerGrid: Int, round: Int, score: Int) -> [GameColor]
 

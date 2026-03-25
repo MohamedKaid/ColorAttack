@@ -1,5 +1,5 @@
 //
-//  ClassicmodeView_Iphone.swift
+//  ClassicModeView_iPhone.swift
 //  Color Frenzy
 //
 //  Created by Mohamed Kaid on 2/12/26.
@@ -35,12 +35,14 @@ struct ClassicModeView_iPhone: View {
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let layout = layout(for: width)
+            let isSmall = width < 380
 
             ZStack {
-                backgroundLayer
+                // Background
+                GameBackground(mode: backgroundMode)
+                    .ignoresSafeArea()
 
-                // Life-lost red flash overlay
+                // Life lost flash
                 if showLifeLostFlash {
                     Color.red
                         .opacity(0.25)
@@ -49,8 +51,10 @@ struct ClassicModeView_iPhone: View {
                         .transition(.opacity)
                 }
 
-                mainContent(width: width, layout: layout)
+                // Main Content
+                mainContent(isSmall: isSmall)
 
+                // Overlays
                 overlays
             }
             .sheet(isPresented: $showLeaderboard) {
@@ -59,12 +63,12 @@ struct ClassicModeView_iPhone: View {
                     .presentationDragIndicator(.visible)
             }
             .safeAreaInset(edge: .top) {
-                phoneHeader(width: width)
+                header(isSmall: isSmall)
             }
-            .onChange(of: engine.lives.current) {
+            .onChange(of: engine.lives.current) { _, _ in
                 handleLivesChange()
             }
-            .onChange(of: engine.score) {
+            .onChange(of: engine.score) { _, _ in
                 handleScoreChange()
             }
             .onAppear {
@@ -76,37 +80,21 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
-    private struct PhoneLayout {
-        let columns: [GridItem]
-        let spacing: CGFloat
-    }
+    // MARK: - Main Content
 
-    private func layout(for width: CGFloat) -> PhoneLayout {
-        let count = width < 380 ? 2 : 3
-        let spacing: CGFloat = width < 380 ? 10 : 12
-        let columns = Array(repeating: GridItem(.flexible(), spacing: spacing), count: count)
-        return PhoneLayout(columns: columns, spacing: spacing)
-    }
-
-    private var backgroundLayer: some View {
-        GameBackground(mode: backgroundMode)
-            .ignoresSafeArea()
-    }
-
-    private func mainContent(width: CGFloat, layout: PhoneLayout) -> some View {
-        VStack(spacing: 12) {
+    private func mainContent(isSmall: Bool) -> some View {
+        VStack(spacing: isSmall ? 10 : 12) {
             Spacer(minLength: 8)
 
-            promptView(width: width)
+            promptView(isSmall: isSmall)
 
-            // Feedback toast
             feedbackToast
 
             if !isRapidMode {
                 tapTimerView
             }
 
-            gridView(layout: layout)
+            gridView(isSmall: isSmall)
 
             Spacer(minLength: 8)
         }
@@ -114,52 +102,20 @@ struct ClassicModeView_iPhone: View {
         .allowsHitTesting(!showCountdown && !showSettings)
     }
 
-    // Feedback Toast
+    // MARK: - Prompt
 
-    private var feedbackToast: some View {
-        ZStack {
-            if !feedbackText.isEmpty {
-                HStack(spacing: 5) {
-                    Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
-                        .foregroundColor(feedbackColor)
-                        .font(.system(size: 14, weight: .bold))
-                    Text(feedbackText)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(feedbackColor.opacity(0.3))
-                        .overlay(
-                            Capsule()
-                                .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
-                        )
-                )
-                .transition(.asymmetric(
-                    insertion: .scale(scale: 0.8).combined(with: .opacity),
-                    removal: .opacity
-                ))
-            }
-        }
-        .frame(height: 28)
-        .animation(.easeOut(duration: 0.2), value: feedbackText)
-    }
-
-    // Prompt
-
-    private func promptView(width: CGFloat) -> some View {
+    private func promptView(isSmall: Bool) -> some View {
         let isStroop = engine.currentPrompt.displayColor != nil
         let stroopColor = engine.currentPrompt.displayColor?.color ?? .white
-        let luminance = engine.currentPrompt.displayColor?.color.luminance ?? 1.0
-        let isDark = luminance < 0.3
+        let isDark = (engine.currentPrompt.displayColor?.color.luminance ?? 1.0) < 0.3
+        let fontSize: CGFloat = isSmall ? 20 : 24
+        let textColor: Color = isStroop ? stroopColor : .white
 
         return Text(engine.promptText.uppercased())
-            .font(.system(size: width < 380 ? 22 : 26, weight: .heavy))
-            .foregroundColor(isStroop ? stroopColor : .white)
+            .font(.system(size: fontSize, weight: .heavy))
+            .foregroundColor(textColor)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.6)
             .padding(.vertical, 10)
             .padding(.horizontal, 16)
             .background(promptBackground(isDark: isDark))
@@ -167,52 +123,118 @@ struct ClassicModeView_iPhone: View {
     }
 
     private func promptBackground(isDark: Bool) -> some View {
-        RoundedRectangle(cornerRadius: 14)
+        RoundedRectangle(cornerRadius: 12)
             .fill(isDark ? Color.white.opacity(0.9) : Color.black.opacity(0.45))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(
-                        engine.switchOn ? Color.red.opacity(0.6) : Color.white.opacity(0.18),
-                        lineWidth: 2
-                    )
+            .overlay(promptBorder)
+    }
+
+    private var promptBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(
+                engine.switchOn
+                ? Color.red.opacity(0.6)
+                : Color.white.opacity(0.18),
+                lineWidth: 2
             )
     }
 
-    // Tap Timer
+    // MARK: - Feedback Toast
 
-    private var tapTimerView: some View {
-        let isUrgent = engine.remainingTapTime < 1.0
+    private var feedbackToast: some View {
+        ZStack {
+            if !feedbackText.isEmpty {
+                feedbackContent
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.8).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+        }
+        .frame(height: 28)
+        .animation(.easeOut(duration: 0.2), value: feedbackText)
+    }
 
-        return HStack(spacing: 8) {
-            Image(systemName: "hand.tap.fill")
-                .foregroundColor(isUrgent ? .red : .yellow)
+    private var feedbackContent: some View {
+        let iconName = feedbackColor == .green
+            ? "checkmark.circle.fill"
+            : "xmark.circle.fill"
 
-            Text(String(format: "%.1f s", engine.remainingTapTime))
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(isUrgent ? .red : .white)
+        return HStack(spacing: 5) {
+            Image(systemName: iconName)
+                .foregroundColor(feedbackColor)
+                .font(.system(size: 13, weight: .bold))
+
+            Text(feedbackText)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(
-            Capsule()
-                .fill(isUrgent ? Color.red.opacity(0.28) : Color.black.opacity(0.38))
-                .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1))
-        )
+        .background(feedbackBackground)
+    }
+
+    private var feedbackBackground: some View {
+        Capsule()
+            .fill(feedbackColor.opacity(0.3))
+            .overlay(
+                Capsule()
+                    .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
+            )
+    }
+
+    // MARK: - Tap Timer
+
+    private var tapTimerView: some View {
+        let isUrgent = engine.remainingTapTime < 1.0
+        let timerColor: Color = isUrgent ? .red : .yellow
+        let textColor: Color = isUrgent ? .red : .white
+        let bgColor: Color = isUrgent ? Color.red.opacity(0.28) : Color.black.opacity(0.38)
+
+        return HStack(spacing: 6) {
+            Image(systemName: "hand.tap.fill")
+                .foregroundColor(timerColor)
+                .font(.system(size: 14))
+
+            Text(String(format: "%.1f s", engine.remainingTapTime))
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(textColor)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(tapTimerBackground(bgColor: bgColor))
         .scaleEffect(flashTimer ? 1.08 : 1.0)
-        .onChange(of: isUrgent) { flashTimer = isUrgent }
+        .onChange(of: isUrgent) { _, newValue in
+            flashTimer = newValue
+        }
         .animation(
-            flashTimer ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true) : .default,
+            flashTimer
+            ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true)
+            : .default,
             value: flashTimer
         )
     }
 
-    // Grid
+    private func tapTimerBackground(bgColor: Color) -> some View {
+        Capsule()
+            .fill(bgColor)
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+    }
 
-    private func gridView(layout: PhoneLayout) -> some View {
+    // MARK: - Grid
+
+    private func gridView(isSmall: Bool) -> some View {
+        let columnCount = isSmall ? 2 : 3
+        let spacing: CGFloat = isSmall ? 10 : 12
+        let columns = Array(
+            repeating: GridItem(.flexible(), spacing: spacing),
+            count: columnCount
+        )
         let isNine = engine.gridColors.count == 9
-        let gridSpacing: CGFloat = isNine ? 12 : 16
 
-        return LazyVGrid(columns: layout.columns, spacing: gridSpacing) {
+        return LazyVGrid(columns: columns, spacing: isNine ? 10 : 12) {
             ForEach(engine.gridColors) { gameColor in
                 Button {
                     engine.handleTap(action: .colorTap(gameColor))
@@ -223,11 +245,11 @@ struct ClassicModeView_iPhone: View {
                 .disabled(engine.isGameOver)
             }
         }
-        .padding(isNine ? 10 : 16)
-        .frame(maxWidth: 1100)
+        .padding(isSmall ? 10 : 12)
+        .frame(maxWidth: .infinity)
     }
 
-    // Overlays
+    // MARK: - Overlays
 
     private var overlays: some View {
         ZStack {
@@ -249,156 +271,216 @@ struct ClassicModeView_iPhone: View {
         }
     }
 
+    // MARK: - Game Over
+
     private var gameOverOverlay: some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
+            Color.black.opacity(0.7)
+                .ignoresSafeArea()
 
-            VStack(spacing: 12) {
-                Text("Game Over")
-                    .font(.system(size: 28, weight: .heavy))
-                    .foregroundColor(.white)
-
-                Text("Final Score: \(engine.score)")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.9))
-
-                HStack(spacing: 12) {
-                    Button("Home") {
-                        engine.stop()
-                        currentScreen = .modeSelection
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.blue)
-                }
-            }
-            .padding(22)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.black.opacity(0.82))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                    )
-            )
-            .padding(.horizontal, 18)
+            gameOverContent
         }
     }
 
-    // Header
+    private var gameOverContent: some View {
+        VStack(spacing: 12) {
+            Text("Game Over")
+                .font(.system(size: 26, weight: .heavy))
+                .foregroundColor(.white)
 
-    @ViewBuilder
-    private func phoneHeader(width: CGFloat) -> some View {
-        let titleSize: CGFloat = width < 380 ? 16 : 18
-        let valueSize: CGFloat = width < 380 ? 18 : 20
+            Text("Final Score: \(engine.score)")
+                .font(.headline)
+                .foregroundColor(.white.opacity(0.9))
 
-        HStack(spacing: 10) {
-            Button {
+            Button("Home") {
                 engine.stop()
                 currentScreen = .modeSelection
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.85))
-                    .padding(8)
-                    .background(Circle().fill(Color.black.opacity(0.25)))
             }
+            .font(.headline)
+            .frame(minWidth: 120, minHeight: 44)
+            .buttonStyle(.bordered)
+            .tint(.blue)
+        }
+        .padding(24)
+        .background(gameOverBackground)
+        .padding(.horizontal, 16)
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Score to Beat")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                Text("\(bestClassicScore)")
-                    .font(.system(size: titleSize, weight: .bold))
-                    .foregroundColor(.white)
-            }
+    private var gameOverBackground: some View {
+        RoundedRectangle(cornerRadius: 18)
+            .fill(Color.black.opacity(0.82))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+            )
+    }
+
+    // MARK: - Header
+
+    private func header(isSmall: Bool) -> some View {
+        let valueSize: CGFloat = isSmall ? 16 : 18
+
+        return HStack(spacing: 8) {
+            backButton
+
+            bestScoreView(valueSize: valueSize)
 
             Spacer()
 
-            centerStatus(valueSize: valueSize)
+            centerStatus(isSmall: isSmall)
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("SCORE")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                Text("\(engine.score)")
-                    .font(.system(size: valueSize, weight: .heavy))
-                    .foregroundColor(.white)
-            }
-            
-            Button {
-                leaderboardDetent = .medium
-                showLeaderboard = true
-            } label: {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.85))
-                    .padding(8)
-                    .background(Circle().fill(Color.black.opacity(0.25)))
-            }
+            scoreView(valueSize: valueSize)
 
+//            leaderboardButton
 
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    showSettings = true
-                }
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-                    .padding(8)
-                    .background(Circle().fill(Color.black.opacity(0.25)))
-            }
+            settingsButton
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(Color.black.opacity(0.45))
     }
 
-    @ViewBuilder
-    private func centerStatus(valueSize: CGFloat) -> some View {
-        if isRapidMode {
-            let remaining = engine.remainingGameTime ?? engine.config.totalGameTimeLimit ?? 0
-            let isUrgent = remaining <= 5
+    private var backButton: some View {
+        Button {
+            engine.stop()
+            currentScreen = .modeSelection
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.85))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.black.opacity(0.25)))
+        }
+    }
 
-            HStack(spacing: 5) {
-                Image(systemName: "clock.fill")
-                    .foregroundColor(isUrgent ? .red : .yellow)
-                Text(formatTime(remaining))
-                    .font(.system(size: valueSize, weight: .medium))
-                    .foregroundColor(.white)
+    private func bestScoreView(valueSize: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Best")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white.opacity(0.7))
+            Text("\(bestClassicScore)")
+                .font(.system(size: valueSize, weight: .bold))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+    }
+
+    private func scoreView(valueSize: CGFloat) -> some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            Text("SCORE")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.white.opacity(0.7))
+            Text("\(engine.score)")
+                .font(.system(size: valueSize, weight: .heavy))
+                .foregroundColor(.white)
+                .lineLimit(1)
+        }
+    }
+
+//    private var leaderboardButton: some View {
+//        Button {
+//            leaderboardDetent = .medium
+//            showLeaderboard = true
+//        } label: {
+//            Image(systemName: "trophy.fill")
+//                .font(.system(size: 16, weight: .semibold))
+//                .foregroundColor(.white.opacity(0.85))
+//                .frame(width: 36, height: 36)
+//                .background(Circle().fill(Color.black.opacity(0.25)))
+//        }
+//    }
+
+    private var settingsButton: some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) {
+                showSettings = true
             }
-            .scaleEffect(flashTimer ? 1.08 : 1.0)
-            .onChange(of: isUrgent) { flashTimer = isUrgent }
-            .animation(
-                flashTimer ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true) : .default,
-                value: flashTimer
-            )
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.white.opacity(0.8))
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(Color.black.opacity(0.25)))
+        }
+    }
+
+    // MARK: - Center Status
+
+    @ViewBuilder
+    private func centerStatus(isSmall: Bool) -> some View {
+        let valueSize: CGFloat = isSmall ? 16 : 18
+
+        if isRapidMode {
+            rapidTimer(valueSize: valueSize)
         } else {
-            HStack(spacing: 6) {
-                ForEach(0..<engine.lives.current, id: \.self) { _ in
-                    Image(systemName: "heart.fill")
-                        .foregroundColor(.red)
-                        .font(.system(size: 18, weight: .bold))
-                        .scaleEffect(animateHearts ? 0.75 : 1.0)
-                        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: animateHearts)
+            livesView(isSmall: isSmall)
+        }
+    }
+
+    private func rapidTimer(valueSize: CGFloat) -> some View {
+        let remaining = engine.remainingGameTime ?? engine.config.totalGameTimeLimit ?? 0
+        let isUrgent = remaining <= 5
+        let clockColor: Color = isUrgent ? .red : .yellow
+
+        return HStack(spacing: 5) {
+            Image(systemName: "clock.fill")
+                .foregroundColor(clockColor)
+                .font(.system(size: 14))
+
+            Text(formatTime(remaining))
+                .font(.system(size: valueSize, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .scaleEffect(flashTimer ? 1.08 : 1.0)
+        .onChange(of: isUrgent) { _, newValue in
+            flashTimer = newValue
+            if newValue {
+                AudioPlayer.shared.playSFX("clockTimer")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    AudioPlayer.shared.stopSFX("clockTimer")
                 }
+            } else {
+                AudioPlayer.shared.stopSFX("clockTimer")
+            }
+        }
+        .animation(
+            flashTimer
+            ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true)
+            : .default,
+            value: flashTimer
+        )
+    }
+
+    private func livesView(isSmall: Bool) -> some View {
+        let heartSize: CGFloat = isSmall ? 16 : 18
+
+        return HStack(spacing: 6) {
+            ForEach(0..<engine.lives.current, id: \.self) { _ in
+                Image(systemName: "heart.fill")
+                    .foregroundColor(.red)
+                    .font(.system(size: heartSize, weight: .bold))
+                    .scaleEffect(animateHearts ? 0.75 : 1.0)
+                    .animation(
+                        .spring(response: 0.25, dampingFraction: 0.6),
+                        value: animateHearts
+                    )
             }
         }
     }
 
-    // Event Handlers
+    // MARK: - Event Handlers
 
     private func handleLivesChange() {
+        guard !isRapidMode else { return }
+
         if engine.lives.current < lastLives {
-            // Heart shrink
             animateHearts = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                 animateHearts = false
             }
 
-            // Red flash
             withAnimation(.easeIn(duration: 0.1)) {
                 showLifeLostFlash = true
             }
@@ -408,7 +490,6 @@ struct ClassicModeView_iPhone: View {
                 }
             }
 
-            // Toast
             showFeedback(text: "−1 Life", color: .red)
         }
         lastLives = engine.lives.current
@@ -434,16 +515,12 @@ struct ClassicModeView_iPhone: View {
         lastScore = engine.score
         showCountdown = true
 
-        let leaderboardID = isRapidMode
-            ? "com.example.ColorAttack.Rapid"
-            : "com.example.ColorAttack.Classic"
-
-        loadMyBestScore(leaderboardID: leaderboardID) { score in
+        loadMyBestScore(leaderboardID: engine.config.leaderboardID) { score in
             bestClassicScore = score
         }
     }
 
-    // Helpers
+    // MARK: - Helpers
 
     private func formatTime(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded(.down)))
@@ -464,9 +541,10 @@ struct ClassicModeView_iPhone: View {
     }
 }
 
+// MARK: - Previews
 
 #Preview("Classic Mode") {
-    ClassicModeView(
+    ClassicModeView_iPhone(
         currentScreen: .constant(.classic),
         engine: GameEngine(
             lives: Lives(max: 3),
@@ -484,7 +562,7 @@ struct ClassicModeView_iPhone: View {
 }
 
 #Preview("Rapid Mode") {
-    ClassicModeView(
+    ClassicModeView_iPhone(
         currentScreen: .constant(.rapid),
         engine: GameEngine(
             lives: Lives(max: 1),

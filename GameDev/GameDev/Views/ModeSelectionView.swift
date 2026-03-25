@@ -13,36 +13,34 @@ struct ModeSelectionView: View {
     @State private var dragX: CGFloat = 0
     @State private var showSettings = false
 
-    // Reduced card size for iPhone
-    private let cardWidth: CGFloat = 240
-    private let cardHeight: CGFloat = 380
+    private let cardWidth: CGFloat = 220
+    private let cardHeight: CGFloat = 340
     private let cardSpacing: CGFloat = 16
 
-    // Hides Chaos on iPhone
+    // AFTER — clean
     private var visibleModes: [GameMode] {
-        UIDevice.current.userInterfaceIdiom == .phone
-        ? GameMode.allCases.filter { mode in mode != .chaos }
-        : GameMode.allCases
+        GameMode.allCases
     }
 
     var body: some View {
         ZStack {
-            // Background
             GameBackground(mode: .menu)
                 .ignoresSafeArea()
 
             // Main Content
             VStack(spacing: 0) {
-                Spacer(minLength: 20)
+                Spacer(minLength: 24)
 
                 // Title
+                // HIG - Large Title 34pt for screen headers
                 Text("SELECT MODE")
-                    .font(.custom("Candy-Planet", size: 26))
+                    .font(.custom("Candy-Planet", size: 28))
                     .foregroundColor(.white)
                     .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
                     .padding(.top, 8)
+                    .accessibilityAddTraits(.isHeader)
 
-                Spacer(minLength: 20)
+                Spacer(minLength: 24)
 
                 // Carousel
                 ZStack {
@@ -61,6 +59,7 @@ struct ModeSelectionView: View {
                     .opacity(0.5)
                     .offset(x: -sideOffset + dragX * 0.35)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true) // HIG - hide non-focused carousel items
 
                     // Right Card
                     ModeCardView(
@@ -73,6 +72,7 @@ struct ModeSelectionView: View {
                     .opacity(0.5)
                     .offset(x: sideOffset + dragX * 0.35)
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true) // HIG - hide non-focused carousel items
 
                     // Center Card
                     ModeCardView(
@@ -82,6 +82,7 @@ struct ModeSelectionView: View {
                     )
                     .frame(width: cardWidth, height: cardHeight)
                     .offset(x: dragX)
+                    .accessibilityLabel("\(modes[currentIndex].title) mode, selected")
                 }
                 .frame(height: cardHeight + 20)
                 .contentShape(Rectangle())
@@ -93,6 +94,7 @@ struct ModeSelectionView: View {
                         .onEnded { value in
                             let threshold: CGFloat = 70
                             let predicted = value.predictedEndTranslation.width
+                            // HIG - use haptics for meaningful interactions 
                             let generator = UIImpactFeedbackGenerator(style: .light)
 
                             if predicted < -threshold {
@@ -112,11 +114,29 @@ struct ModeSelectionView: View {
                             }
                         }
                 )
+                // HIG - accessibility actions for swipe carousel
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(visibleModes[currentIndex].title)
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment:
+                        withAnimation {
+                            currentIndex = wrappedIndex(currentIndex + 1, visibleModes.count)
+                        }
+                    case .decrement:
+                        withAnimation {
+                            currentIndex = wrappedIndex(currentIndex - 1, visibleModes.count)
+                        }
+                    @unknown default:
+                        break
+                    }
+                }
 
                 Spacer(minLength: 16)
 
                 // Page Indicators
-                HStack(spacing: 10) {
+                // HIG - use clear visual indicators for pagination
+                HStack(spacing: 8) {
                     ForEach(Array(visibleModes.enumerated()), id: \.element.id) { index, mode in
                         Circle()
                             .fill(currentIndex == index ? mode.color : Color.white.opacity(0.4))
@@ -128,21 +148,27 @@ struct ModeSelectionView: View {
                     }
                 }
                 .padding(.bottom, 12)
+                .accessibilityHidden(true) // decorative only
 
-                // Current Mode Label
+                // Mode Label
                 Text(visibleModes[currentIndex].title)
-                    .font(.custom("Candy-Planet", size: 20))
+                    .font(.title3) // HIG - 20pt
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
                     .background(
                         Capsule()
                             .fill(visibleModes[currentIndex].color.opacity(0.8))
-                            .shadow(color: visibleModes[currentIndex].color.opacity(0.5), radius: 8)
+                            .shadow(
+                                color: visibleModes[currentIndex].color.opacity(0.5),
+                                radius: 8
+                            )
                     )
                     .animation(.easeInOut(duration: 0.2), value: currentIndex)
+                    .accessibilityHidden(true) // already announced by carousel
 
-                Spacer(minLength: 30)
+                Spacer(minLength: 32)
             }
             .onAppear {
                 currentIndex = min(currentIndex, visibleModes.count - 1)
@@ -160,46 +186,54 @@ struct ModeSelectionView: View {
         // Top Bar
         .safeAreaInset(edge: .top) {
             HStack {
-                // Back Button
+                // HIG - back buttons should be clear and use chevron.left
                 Button {
                     currentScreen = .start
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .accessibilityHidden(true)
                         Text("Back")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white.opacity(0.8))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .foregroundColor(.white.opacity(0.9))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    // HIG - minimum touch target 44x44pt
+                    .frame(minHeight: 44)
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.15))
                     )
                 }
+                .accessibilityLabel("Back")
 
                 Spacer()
 
-                // Settings Button
+                // HIG - settings icon should be gearshape
                 Button {
                     withAnimation(.easeOut(duration: 0.2)) {
                         showSettings = true
                     }
                 } label: {
                     Image(systemName: "gearshape.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white.opacity(0.7))
-                        .padding(9)
+                        .font(.body) // HIG - body size for toolbar icons
+                        .foregroundColor(.white.opacity(0.9))
+                        .padding(12)
+                        // HIG - minimum touch target 44x44pt
+                        .frame(width: 44, height: 44)
                         .background(
                             Circle()
                                 .fill(Color.white.opacity(0.15))
                         )
                 }
+                .accessibilityLabel("Settings")
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 16) // HIG standard margin
+            .padding(.vertical, 8)
             .background(Color.black.opacity(0.5))
         }
     }
@@ -210,10 +244,24 @@ struct ModeSelectionView: View {
         (i % count + count) % count
     }
 
+    //this is to turn off chaos mode in iPhone//
+    
+//    private func navigateToMode(_ mode: GameMode) {
+//        if UIDevice.current.userInterfaceIdiom == .phone, mode == .chaos {
+//            return
+//        }
+//        switch mode {
+//        case .classic:
+//            currentScreen = .classic
+//        case .rapid:
+//            currentScreen = .rapid
+//        case .chaos:
+//            currentScreen = .chaos
+//        }
+//    }
+    
+    // all modes work
     private func navigateToMode(_ mode: GameMode) {
-        if UIDevice.current.userInterfaceIdiom == .phone, mode == .chaos {
-            return
-        }
         switch mode {
         case .classic:
             currentScreen = .classic

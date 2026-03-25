@@ -1,13 +1,14 @@
-
 import SwiftUI
+import GameKit
 
 struct ModeCardView: View {
     let mode: GameMode
     var isSelected: Bool = false
     let onStart: () -> Void
-    
+
     @State private var isPressed: Bool = false
     @State private var glowAnimation: Bool = false
+    @State private var showLeaderboard: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,45 +20,60 @@ struct ModeCardView: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
-                
+
                 // Decorative circles
                 Circle()
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 100, height: 100)
                     .offset(x: -60, y: -30)
-                
+
                 Circle()
                     .fill(Color.white.opacity(0.1))
                     .frame(width: 60, height: 60)
                     .offset(x: 80, y: 40)
-                
+
                 VStack(spacing: 8) {
-//                    // Mode Icon
                     Image(systemName: mode.icon)
                         .font(.system(size: 44, weight: .bold))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.2), radius: 2, y: 2)
-                    
-                    // Title
+
                     Text(mode.title)
                         .font(.system(size: 26, weight: .black, design: .rounded))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.2), radius: 2, y: 2)
+                }
+
+                // Leaderboard Button — top right corner of header
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showLeaderboard = true
+                        } label: {
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.black.opacity(0.25)))
+                        }
+                        .padding(10)
+                    }
+                    Spacer()
                 }
             }
             .frame(height: 140)
             .clipShape(
                 RoundedCorner(radius: 20, corners: [.topLeft, .topRight])
             )
-            
+
             // Content
             VStack(spacing: 16) {
-                // Difficulty Badge
                 HStack {
                     Spacer()
                 }
                 .padding(.top, 12)
-                
+
                 // Rules
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(mode.rules.enumerated()), id: \.offset) { index, rule in
@@ -72,9 +88,9 @@ struct ModeCardView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Start Button
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
@@ -125,7 +141,6 @@ struct ModeCardView: View {
             y: isSelected ? 8 : 5
         )
         .overlay(
-            // Glow effect for selected card
             RoundedRectangle(cornerRadius: 20)
                 .stroke(mode.color.opacity(glowAnimation ? 0.6 : 0), lineWidth: 2)
                 .blur(radius: 4)
@@ -136,10 +151,43 @@ struct ModeCardView: View {
                 glowAnimation = true
             }
         }
+        .sheet(isPresented: $showLeaderboard) {
+            LeaderboardView(leaderboardID: mode.leaderboardID)
+                .ignoresSafeArea()
+        }
     }
 }
 
-// Custom shape for rounded corners on specific sides
+// MARK: - Game Center Leaderboard
+
+struct LeaderboardView: UIViewControllerRepresentable {
+    let leaderboardID: String
+
+    func makeUIViewController(context: Context) -> GKGameCenterViewController {
+        let vc = GKGameCenterViewController(
+            leaderboardID: leaderboardID,
+            playerScope: .global,
+            timeScope: .allTime
+        )
+        vc.gameCenterDelegate = context.coordinator
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: GKGameCenterViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject, GKGameCenterControllerDelegate {
+        func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
+            gameCenterViewController.dismiss(animated: true)
+        }
+    }
+}
+
+// MARK: - Custom Rounded Corner Shape
+
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners
@@ -153,6 +201,8 @@ struct RoundedCorner: Shape {
         return Path(path.cgPath)
     }
 }
+
+// MARK: - Preview
 
 #Preview("Mode Card") {
     ZStack {

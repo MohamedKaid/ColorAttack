@@ -11,7 +11,7 @@ struct CardView: View {
     let gameColor: GameColor
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 18)
+        RoundedRectangle(cornerRadius: 16)
             .fill(
                 LinearGradient(
                     colors: [
@@ -23,19 +23,19 @@ struct CardView: View {
                 )
             )
             .overlay(
-                // Soft highlight (top-left light source)
-                RoundedRectangle(cornerRadius: 18)
+                // Soft highlight
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(Color.white.opacity(0.4), lineWidth: 1.5)
                     .blendMode(.overlay)
             )
             .overlay(
-                // Subtle inner shadow for depth
-                RoundedRectangle(cornerRadius: 18)
+                // Inner shadow
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(Color.black.opacity(0.25), lineWidth: 2)
                     .blur(radius: 2)
                     .offset(x: 1, y: 2)
                     .mask(
-                        RoundedRectangle(cornerRadius: 18)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(
                                 LinearGradient(
                                     colors: [.black, .clear],
@@ -45,22 +45,28 @@ struct CardView: View {
                             )
                     )
             )
-            .shadow(color: .black.opacity(0.35), radius: 10, x: 0, y: 6)
-            .frame(height: 120)
+            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+            .frame(height: 88) // HIG minimum touch target is 44pt, 88pt gives good spacing
             .overlay(
                 Text(gameColor.name)
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.headline) // HIG semantic style - 17pt semibold
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.6), radius: 3, x: 0, y: 2)
+                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                    .padding(.horizontal, 8)
             )
             .accessibilityLabel(gameColor.name)
+            .accessibilityAddTraits(.isButton)
     }
 }
 
-#Preview("3D Card") {
-    CardView(
-        gameColor: GameColor(name: "Blue", color: .blue)
-    )
+#Preview("Card") {
+    VStack(spacing: 16) {
+        CardView(gameColor: GameColor(name: "Blue", color: .blue))
+        CardView(gameColor: GameColor(name: "Red", color: .red))
+        CardView(gameColor: GameColor(name: "Green", color: .green))
+    }
     .padding()
     .background(
         LinearGradient(
@@ -70,10 +76,3 @@ struct CardView: View {
         )
     )
 }
-
-
-
-
-
-
-

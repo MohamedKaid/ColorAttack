@@ -21,6 +21,14 @@ enum GameMode: CaseIterable, Identifiable {
         case .chaos: return "CHAOS"
         }
     }
+    
+    var leaderboardID: String {
+        switch self {
+        case .classic: return "com.example.ColorAttack.Classic"
+        case .rapid:   return "com.example.ColorAttack.Rapid"
+        case .chaos:   return "com.example.ColorAttack.Chaos"
+        }
+    }
 
     var color: Color {
         switch self {
@@ -67,7 +75,7 @@ enum GameMode: CaseIterable, Identifiable {
         case .classic:
             return [
                 "TAP: Tap the color",
-                "DON’T TAP = choose another",
+                "DON’T TAP means choose another",
                 "Tap timer speeds up over time",
                 "You have 3 lives — mistakes cost one"
             ]

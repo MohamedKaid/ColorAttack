@@ -74,25 +74,25 @@ enum GameMode: CaseIterable, Identifiable {
         switch self {
         case .classic:
             return [
-                "TAP: Tap the color",
-                "DON’T TAP means choose another",
-                "Tap timer speeds up over time",
-                "You have 3 lives — mistakes cost one"
+                "Match the color shown in the prompt",
+                "DON'T TAP? Pick any other color",
+                "Timer gets faster as you progress",
+                "3 lives total — wrong tap loses one"
             ]
         case .rapid:
             return [
-                "Tap as many correct answers as you can",
-                "You have 30 seconds",
-                "Speed matters more than caution",
-                "Wrong taps cost points",
+                "Tap every correct color as fast as you can",
+                "You have 30 seconds — make them count",
+                "Wrong taps deduct points",
+                "Speed wins — but accuracy matters"
             ]
         case .chaos:
             return [
-                "Colors + Shapes combined",
-                "Two instructions per round",
-                "DON’T TAP = choose another",
-                "Complete both before the timer ends",
-                "Layouts may swap randomly"
+                "Match both a color AND a shape each round",
+                "DON'T TAP? Pick any other option",
+                "Tap both answers before the timer runs out",
+                "Wrong taps cost a life",
+                "Grid layout shifts randomly — stay sharp"
             ]
         }
     }

@@ -14,7 +14,6 @@ struct ModeCardView: View {
         VStack(spacing: 0) {
             // Header with Icon
             ZStack {
-                // Gradient header background
                 LinearGradient(
                     colors: [mode.color, mode.colorSecondary],
                     startPoint: .topLeading,
@@ -69,12 +68,8 @@ struct ModeCardView: View {
 
             // Content
             VStack(spacing: 16) {
-                HStack {
-                    Spacer()
-                }
-                .padding(.top, 12)
 
-                // Rules
+                // Rules — no fixed height, grows with content
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(mode.rules.enumerated()), id: \.offset) { index, rule in
                         HStack(alignment: .top, spacing: 10) {
@@ -82,14 +77,15 @@ struct ModeCardView: View {
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(mode.color)
                                 .frame(width: 20)
+                                .padding(.top, 1)
                             Text(rule)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.primary.opacity(0.8))
+                                .fixedSize(horizontal: false, vertical: true) // key fix — allows text to wrap fully
                         }
                     }
                 }
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Start Button
                 Button(action: {
@@ -122,11 +118,11 @@ struct ModeCardView: View {
                 }
                 .scaleEffect(isPressed ? 0.95 : 1)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(16)
             .background(Color(.systemBackground))
         }
-        .frame(width: 260, height: 420)
+        // Removed fixed height — card grows to fit content
+        .frame(width: 260)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .overlay(
             RoundedRectangle(cornerRadius: 20)
@@ -209,7 +205,7 @@ struct RoundedCorner: Shape {
         Color.gray.opacity(0.3).ignoresSafeArea()
         HStack(spacing: 20) {
             ModeCardView(mode: .classic, isSelected: true) { }
-            ModeCardView(mode: .rapid, isSelected: false) { }
+            ModeCardView(mode: .chaos, isSelected: false) { }
         }
     }
 }

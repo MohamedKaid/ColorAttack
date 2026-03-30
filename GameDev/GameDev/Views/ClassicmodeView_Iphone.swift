@@ -32,17 +32,21 @@ struct ClassicModeView_iPhone: View {
         isRapidMode ? .rapid : .classic
     }
 
+    // Detect Display Zoom
+    private var isZoomed: Bool {
+        UIScreen.main.scale > UIScreen.main.nativeScale || UIScreen.main.bounds.width < 375
+    }
+
     var body: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let isSmall = width < 380
+            // ✅ Force standard layout when zoomed
+            let isSmall = isZoomed ? false : width < 380
 
             ZStack {
-                // Background
                 GameBackground(mode: backgroundMode)
                     .ignoresSafeArea()
 
-                // Life lost flash
                 if showLifeLostFlash {
                     Color.red
                         .opacity(0.25)
@@ -51,10 +55,8 @@ struct ClassicModeView_iPhone: View {
                         .transition(.opacity)
                 }
 
-                // Main Content
-                mainContent(isSmall: isSmall)
+                mainContent(isSmall: isSmall, availableHeight: geo.size.height)
 
-                // Overlays
                 overlays
             }
             .sheet(isPresented: $showLeaderboard) {
@@ -82,7 +84,7 @@ struct ClassicModeView_iPhone: View {
 
     // MARK: - Main Content
 
-    private func mainContent(isSmall: Bool) -> some View {
+    private func mainContent(isSmall: Bool, availableHeight: CGFloat) -> some View {
         VStack(spacing: isSmall ? 10 : 12) {
             Spacer(minLength: 8)
 
@@ -94,7 +96,7 @@ struct ClassicModeView_iPhone: View {
                 tapTimerView
             }
 
-            gridView(isSmall: isSmall)
+            gridView(isSmall: isSmall, availableHeight: availableHeight)
 
             Spacer(minLength: 8)
         }
@@ -225,28 +227,39 @@ struct ClassicModeView_iPhone: View {
 
     // MARK: - Grid
 
-    private func gridView(isSmall: Bool) -> some View {
+    private func gridView(isSmall: Bool, availableHeight: CGFloat) -> some View {
         let columnCount = isSmall ? 2 : 3
-        let spacing: CGFloat = isSmall ? 10 : 12
+        let spacing: CGFloat = isSmall ? 10 : 16  // ✅ More spacing
+        let padding: CGFloat = isSmall ? 20 : 24
         let columns = Array(
             repeating: GridItem(.flexible(), spacing: spacing),
             count: columnCount
         )
         let isNine = engine.gridColors.count == 9
+        let rowCount = max(1, CGFloat(ceil(Double(engine.gridColors.count) / Double(columnCount))))
 
-        return LazyVGrid(columns: columns, spacing: isNine ? 10 : 12) {
+        let reservedHeight: CGFloat = isRapidMode ? 160 : 180
+        let gridAvailableHeight = max(1, availableHeight - reservedHeight)
+
+        let screenWidth = UIScreen.main.bounds.width
+        let cardWidth = max(1, (screenWidth - padding - (CGFloat(columnCount - 1) * spacing)) / CGFloat(columnCount))
+        let heightFromRatio = cardWidth * 0.65  // ✅ Taller cards
+        let maxCardHeight = max(1, (gridAvailableHeight - (spacing * (rowCount - 1)) - padding) / rowCount)
+        let cardHeight = min(heightFromRatio, maxCardHeight)
+
+        return LazyVGrid(columns: columns, spacing: isNine ? spacing : spacing) {
             ForEach(engine.gridColors) { gameColor in
                 Button {
                     engine.handleTap(action: .colorTap(gameColor))
                 } label: {
                     CardView(gameColor: gameColor)
+                        .frame(height: cardHeight)
                 }
                 .buttonStyle(.plain)
                 .disabled(engine.isGameOver)
             }
         }
         .padding(isSmall ? 10 : 12)
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Overlays
@@ -333,8 +346,6 @@ struct ClassicModeView_iPhone: View {
 
             scoreView(valueSize: valueSize)
 
-//            leaderboardButton
-
             settingsButton
         }
         .padding(.horizontal, 12)
@@ -378,19 +389,6 @@ struct ClassicModeView_iPhone: View {
                 .lineLimit(1)
         }
     }
-
-//    private var leaderboardButton: some View {
-//        Button {
-//            leaderboardDetent = .medium
-//            showLeaderboard = true
-//        } label: {
-//            Image(systemName: "trophy.fill")
-//                .font(.system(size: 16, weight: .semibold))
-//                .foregroundColor(.white.opacity(0.85))
-//                .frame(width: 36, height: 36)
-//                .background(Circle().fill(Color.black.opacity(0.25)))
-//        }
-//    }
 
     private var settingsButton: some View {
         Button {

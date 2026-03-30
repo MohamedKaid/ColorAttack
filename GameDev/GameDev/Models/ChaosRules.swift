@@ -59,12 +59,12 @@ final class ChaosRules: ModeRules, TimingRules {
         let shapeDontTap = allowDontTap && Bool.random()
 
         let colorLine = colorDontTap
-            ? "COLOR: DON'T TAP \(color)"
-            : "COLOR: TAP \(color)"
+            ? "DON'T TAP \(color)"
+            : "TAP \(color)"
 
         let shapeLine = shapeDontTap
-            ? "SHAPE: DON'T TAP \(shape)"
-            : "SHAPE: TAP \(shape)"
+            ? "DON'T TAP \(shape)"
+            : "TAP \(shape)"
 
         let text =
         """
@@ -89,26 +89,26 @@ final class ChaosRules: ModeRules, TimingRules {
         switch action {
 
         case .colorTap(let tappedColor):
-            if text.contains("COLOR: DON'T TAP \(tappedColor.name.uppercased())") {
+            if text.contains("DON'T TAP \(tappedColor.name.uppercased())") {
                 return false
             }
-            if text.contains("COLOR: TAP") {
+            if text.contains("TAP") {
                 return text.contains(tappedColor.name.uppercased())
             }
             return true
 
         case .shapeTap(let tappedShape):
-            if text.contains("SHAPE: DON'T TAP \(tappedShape.rawValue.uppercased())") {
+            if text.contains("DON'T TAP \(tappedShape.rawValue.uppercased())") {
                 return false
             }
-            if text.contains("SHAPE: TAP") {
+            if text.contains("TAP") {
                 return text.contains(tappedShape.rawValue.uppercased())
             }
             return true
 
         case .noTap:
-            let colorDontTap = text.contains("COLOR: DON'T TAP")
-            let shapeDontTap = text.contains("SHAPE: DON'T TAP")
+            let colorDontTap = text.contains("DON'T TAP")
+            let shapeDontTap = text.contains("DON'T TAP")
             return colorDontTap && shapeDontTap
         }
     }

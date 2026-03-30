@@ -11,6 +11,8 @@ struct ChaosModeView_iPhone: View {
     @ObservedObject var engine: GameEngine
     @Binding var currentScreen: AppScreen
 
+    // MARK: - State
+
     @State private var bestChaosScore = 0
     @State private var lastLives: Int = 0
     @State private var lastScore: Int = 0
@@ -22,17 +24,22 @@ struct ChaosModeView_iPhone: View {
     @State private var feedbackText: String = ""
     @State private var feedbackColor: Color = .clear
 
+    // MARK: - Computed
+
+    private var isZoomed: Bool {
+        UIScreen.main.scale > UIScreen.main.nativeScale || UIScreen.main.bounds.width < 375
+    }
+
+    // MARK: - Body
+
     var body: some View {
         GeometryReader { geo in
-            let width = geo.size.width
-            let isSmall = width < 380
+            let isSmall = isZoomed ? false : geo.size.width < 380
 
             ZStack {
-                // Background
                 GameBackground(mode: .chaos)
                     .ignoresSafeArea()
 
-                // Life lost flash
                 if showLifeLostFlash {
                     Color.red
                         .opacity(0.25)
@@ -41,48 +48,34 @@ struct ChaosModeView_iPhone: View {
                         .transition(.opacity)
                 }
 
-                // Main Content
-                mainContent(isSmall: isSmall)
+                mainContent(geo: geo, isSmall: isSmall)
 
-                // Overlays
                 overlays
             }
             .safeAreaInset(edge: .top) {
                 header(isSmall: isSmall)
             }
-            .onChange(of: engine.lives.current) { _, _ in
-                handleLivesChange()
-            }
-            .onChange(of: engine.score) { _, _ in
-                handleScoreChange()
-            }
-            .onAppear {
-                handleAppear()
-            }
-            .onDisappear {
-                engine.stop()
-            }
+            .onChange(of: engine.lives.current) { _, _ in handleLivesChange() }
+            .onChange(of: engine.score) { _, _ in handleScoreChange() }
+            .onAppear { handleAppear() }
+            .onDisappear { engine.stop() }
         }
     }
 
     // MARK: - Main Content
 
-    private func mainContent(isSmall: Bool) -> some View {
+    private func mainContent(geo: GeometryProxy, isSmall: Bool) -> some View {
         VStack(spacing: isSmall ? 8 : 10) {
             Spacer(minLength: 6)
 
-            // Instruction
             ChaosInstructionView(text: engine.promptText)
                 .padding(.horizontal, 12)
 
-            // Feedback Toast
             feedbackToast
 
-            // Tap Timer
             tapTimerView
 
-            // Split Grid
-            splitGridContent(isSmall: isSmall)
+            splitGridContent(availableWidth: geo.size.width, availableHeight: geo.size.height)
 
             Spacer(minLength: 6)
         }
@@ -90,52 +83,61 @@ struct ChaosModeView_iPhone: View {
         .allowsHitTesting(!showCountdown && !showSettings)
     }
 
-    // MARK: - Split Grid Content
+    // MARK: - Split Grid
 
-    private func splitGridContent(isSmall: Bool) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+    private func splitGridContent(availableWidth: CGFloat, availableHeight: CGFloat) -> some View {
+        let horizontalPadding: CGFloat = 24
+        let columnSpacing: CGFloat = 12
+        let cardSpacing: CGFloat = 8
 
-            // Colors — Left Side
+        // ✅ Derive column width purely from available width — no GeometryReader needed
+        let columnWidth = (availableWidth - horizontalPadding - columnSpacing) / 2
+        let cardWidth = (columnWidth - cardSpacing) / 2
+        let cardHeight = cardWidth * 1.15
+
+        return HStack(alignment: .top, spacing: columnSpacing) {
+
+            // Colors — Left
             VStack(spacing: 6) {
                 sectionLabel(title: "COLORS", icon: "paintpalette.fill")
                 LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 8
+                    columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: cardSpacing), count: 2),
+                    spacing: cardSpacing
                 ) {
                     ForEach(engine.gridColors) { gameColor in
                         Button {
                             engine.handleTap(action: .colorTap(gameColor))
                         } label: {
                             CardView(gameColor: gameColor)
+                                .frame(height: cardHeight)
                         }
                         .buttonStyle(.plain)
                         .disabled(engine.isGameOver)
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
 
-            // Shapes — Right Side
+            // Shapes — Right
             VStack(spacing: 6) {
                 sectionLabel(title: "SHAPES", icon: "square.on.circle.fill")
                 LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
-                    spacing: 8
+                    columns: Array(repeating: GridItem(.fixed(cardWidth), spacing: cardSpacing), count: 2),
+                    spacing: cardSpacing
                 ) {
                     ForEach(engine.gridShapes) { shape in
                         Button {
                             engine.handleTap(action: .shapeTap(shape))
                         } label: {
                             ShapeCardView(shape: shape)
+                                .frame(height: cardHeight)
                         }
                         .buttonStyle(.plain)
                         .disabled(engine.isGameOver)
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, horizontalPadding / 2)
     }
 
     private func sectionLabel(title: String, icon: String) -> some View {
@@ -160,33 +162,25 @@ struct ChaosModeView_iPhone: View {
             Image(systemName: "hand.tap.fill")
                 .foregroundColor(timerColor)
                 .font(.system(size: 13))
-
             Text(String(format: "%.1f s", engine.remainingTapTime))
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(textColor)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(tapTimerBackground(bgColor: bgColor))
+        .background(
+            Capsule()
+                .fill(bgColor)
+                .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1))
+        )
         .scaleEffect(flashTimer ? 1.08 : 1.0)
-        .onChange(of: isUrgent) { _, newValue in
-            flashTimer = newValue
-        }
+        .onChange(of: isUrgent) { _, newValue in flashTimer = newValue }
         .animation(
             flashTimer
-            ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true)
-            : .default,
+                ? .easeInOut(duration: 0.35).repeatForever(autoreverses: true)
+                : .default,
             value: flashTimer
         )
-    }
-
-    private func tapTimerBackground(bgColor: Color) -> some View {
-        Capsule()
-            .fill(bgColor)
-            .overlay(
-                Capsule()
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
-            )
     }
 
     // MARK: - Feedback Toast
@@ -194,60 +188,42 @@ struct ChaosModeView_iPhone: View {
     private var feedbackToast: some View {
         ZStack {
             if !feedbackText.isEmpty {
-                feedbackContent
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .opacity
-                    ))
+                HStack(spacing: 5) {
+                    Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundColor(feedbackColor)
+                        .font(.system(size: 13, weight: .bold))
+                    Text(feedbackText)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(feedbackColor.opacity(0.3))
+                        .overlay(Capsule().stroke(feedbackColor.opacity(0.5), lineWidth: 1))
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .opacity
+                ))
             }
         }
         .frame(height: 28)
         .animation(.easeOut(duration: 0.2), value: feedbackText)
     }
 
-    private var feedbackContent: some View {
-        let iconName = feedbackColor == .green
-            ? "checkmark.circle.fill"
-            : "xmark.circle.fill"
-
-        return HStack(spacing: 5) {
-            Image(systemName: iconName)
-                .foregroundColor(feedbackColor)
-                .font(.system(size: 13, weight: .bold))
-
-            Text(feedbackText)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.white)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(feedbackBackground)
-    }
-
-    private var feedbackBackground: some View {
-        Capsule()
-            .fill(feedbackColor.opacity(0.3))
-            .overlay(
-                Capsule()
-                    .stroke(feedbackColor.opacity(0.5), lineWidth: 1)
-            )
-    }
-
     // MARK: - Overlays
 
     private var overlays: some View {
         ZStack {
-            if engine.isGameOver {
-                gameOverOverlay
-            }
-
+            if engine.isGameOver { gameOverOverlay }
             if showCountdown {
                 CountdownView {
                     showCountdown = false
                     engine.start()
                 }
             }
-
             if showSettings {
                 SettingsPopupView(isPresented: $showSettings)
                     .transition(.opacity)
@@ -259,70 +235,57 @@ struct ChaosModeView_iPhone: View {
 
     private var gameOverOverlay: some View {
         ZStack {
-            Color.black.opacity(0.7)
-                .ignoresSafeArea()
+            Color.black.opacity(0.7).ignoresSafeArea()
 
-            gameOverContent
-        }
-    }
+            VStack(spacing: 12) {
+                Text("Game Over")
+                    .font(.system(size: 26, weight: .heavy))
+                    .foregroundColor(.white)
 
-    private var gameOverContent: some View {
-        VStack(spacing: 12) {
-            Text("Game Over")
-                .font(.system(size: 26, weight: .heavy))
-                .foregroundColor(.white)
+                Text("Final Score: \(engine.score)")
+                    .font(.headline)
+                    .foregroundColor(.white.opacity(0.9))
 
-            Text("Final Score: \(engine.score)")
-                .font(.headline)
-                .foregroundColor(.white.opacity(0.9))
+                HStack(spacing: 12) {
+                    Button("Home") {
+                        engine.stop()
+                        currentScreen = .modeSelection
+                    }
+                    .font(.headline)
+                    .frame(minWidth: 100, minHeight: 44)
+                    .buttonStyle(.bordered)
+                    .tint(.white)
 
-            HStack(spacing: 12) {
-                Button("Home") {
-                    engine.stop()
-                    currentScreen = .modeSelection
+                    Button("Restart") {
+                        showCountdown = true
+                    }
+                    .font(.headline)
+                    .frame(minWidth: 100, minHeight: 44)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.purple)
                 }
-                .font(.headline)
-                .frame(minWidth: 100, minHeight: 44)
-                .buttonStyle(.bordered)
-                .tint(.white)
-
-                Button("Restart") {
-                    showCountdown = true
-                }
-                .font(.headline)
-                .frame(minWidth: 100, minHeight: 44)
-                .buttonStyle(.borderedProminent)
-                .tint(.purple)
             }
-        }
-        .padding(24)
-        .background(gameOverBackground)
-        .padding(.horizontal, 16)
-    }
-
-    private var gameOverBackground: some View {
-        RoundedRectangle(cornerRadius: 18)
-            .fill(Color.black.opacity(0.82))
-            .overlay(
+            .padding(24)
+            .background(
                 RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    .fill(Color.black.opacity(0.82))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    )
             )
+            .padding(.horizontal, 16)
+        }
     }
 
     // MARK: - Header
 
     private func header(isSmall: Bool) -> some View {
-        let valueSize: CGFloat = isSmall ? 16 : 18
-
-        return HStack(spacing: 8) {
+        HStack(spacing: 8) {
             backButton
-
             livesView(isSmall: isSmall)
-
             Spacer()
-
-            scoreView(valueSize: valueSize)
-
+            scoreView(valueSize: isSmall ? 16 : 18)
             settingsButton
         }
         .padding(.horizontal, 12)
@@ -350,10 +313,7 @@ struct ChaosModeView_iPhone: View {
                     .foregroundColor(.red)
                     .font(.system(size: isSmall ? 16 : 18, weight: .bold))
                     .scaleEffect(animateHearts ? 0.75 : 1.0)
-                    .animation(
-                        .spring(response: 0.25, dampingFraction: 0.6),
-                        value: animateHearts
-                    )
+                    .animation(.spring(response: 0.25, dampingFraction: 0.6), value: animateHearts)
             }
         }
     }
@@ -374,9 +334,7 @@ struct ChaosModeView_iPhone: View {
 
     private var settingsButton: some View {
         Button {
-            withAnimation(.easeOut(duration: 0.2)) {
-                showSettings = true
-            }
+            withAnimation(.easeOut(duration: 0.2)) { showSettings = true }
         } label: {
             Image(systemName: "gearshape.fill")
                 .font(.system(size: 16, weight: .semibold))
@@ -391,19 +349,12 @@ struct ChaosModeView_iPhone: View {
     private func handleLivesChange() {
         if engine.lives.current < lastLives {
             animateHearts = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-                animateHearts = false
-            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) { animateHearts = false }
 
-            withAnimation(.easeIn(duration: 0.1)) {
-                showLifeLostFlash = true
-            }
+            withAnimation(.easeIn(duration: 0.1)) { showLifeLostFlash = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    showLifeLostFlash = false
-                }
+                withAnimation(.easeOut(duration: 0.2)) { showLifeLostFlash = false }
             }
-
             showFeedback(text: "−1 Life", color: .red)
         }
         lastLives = engine.lives.current
@@ -422,23 +373,17 @@ struct ChaosModeView_iPhone: View {
         lastLives = engine.lives.current
         lastScore = engine.score
         showCountdown = true
-
         loadMyBestScore(leaderboardID: "com.example.ColorAttack.Chaos") { score in
             bestChaosScore = score
         }
     }
 
-    // MARK: - Helpers
-
     private func showFeedback(text: String, color: Color) {
         feedbackText = text
         feedbackColor = color
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             if feedbackText == text {
-                withAnimation {
-                    feedbackText = ""
-                }
+                withAnimation { feedbackText = "" }
             }
         }
     }

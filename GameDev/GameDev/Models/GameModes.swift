@@ -11,62 +11,70 @@ enum GameMode: CaseIterable, Identifiable {
     case classic
     case rapid
     case chaos
+    case sequence
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .classic: return "CLASSIC"
-        case .rapid: return "RAPID"
-        case .chaos: return "CHAOS"
+        case .classic:  return "CLASSIC"
+        case .rapid:    return "RAPID"
+        case .chaos:    return "CHAOS"
+        case .sequence: return "SEQUENCE"
         }
     }
-    
+
     var leaderboardID: String {
         switch self {
-        case .classic: return "com.example.ColorAttack.Classic"
-        case .rapid:   return "com.example.ColorAttack.Rapid"
-        case .chaos:   return "com.example.ColorAttack.Chaos"
+        case .classic:  return "com.example.ColorAttack.Classic"
+        case .rapid:    return "com.example.ColorAttack.Rapid"
+        case .chaos:    return "com.example.ColorAttack.Chaos"
+        case .sequence: return "com.example.ColorAttack.Sequence"
         }
     }
 
     var color: Color {
         switch self {
-        case .classic: return Color(hex: "F4B400")
-        case .rapid: return Color(hex: "EA4335")
-        case .chaos: return Color(hex: "4285F4")
+        case .classic:  return Color(hex: "F4B400")
+        case .rapid:    return Color(hex: "EA4335")
+        case .chaos:    return Color(hex: "4285F4")
+        case .sequence: return Color(hex: "34A853")
         }
     }
-    
+
     var colorSecondary: Color {
         switch self {
-        case .classic: return Color(hex: "F09819")
-        case .rapid: return Color(hex: "FF6B6B")
-        case .chaos: return Color(hex: "667EEA")
+        case .classic:  return Color(hex: "F09819")
+        case .rapid:    return Color(hex: "FF6B6B")
+        case .chaos:    return Color(hex: "667EEA")
+        case .sequence: return Color(hex: "00C9A7")
         }
     }
-    
+
     var icon: String {
         switch self {
-        case .classic: return "star.fill"
-        case .rapid: return "bolt.fill"
-        case .chaos: return "tornado"
+        case .classic:  return "star.fill"
+        case .rapid:    return "bolt.fill"
+        case .chaos:    return "tornado"
+        case .sequence: return "list.number"
         }
     }
-    
+
     var difficulty: String {
         switch self {
-        case .classic: return "BEGINNER"
-        case .rapid: return "INTERMEDIATE"
-        case .chaos: return "EXPERT"
+        case .classic:  return "BEGINNER"
+        case .rapid:    return "INTERMEDIATE"
+        case .chaos:    return "EXPERT"
+        case .sequence: return "INTERMEDIATE"
         }
     }
-    
+
     var difficultyColor: Color {
         switch self {
-        case .classic: return .green
-        case .rapid: return .orange
-        case .chaos: return .red
+        case .classic:  return .green
+        case .rapid:    return .orange
+        case .chaos:    return .red
+        case .sequence: return .orange
         }
     }
 
@@ -94,9 +102,17 @@ enum GameMode: CaseIterable, Identifiable {
                 "Wrong taps cost a life",
                 "Grid layout shifts randomly — stay sharp"
             ]
+        case .sequence:
+            return [
+                "Watch the sequence carefully",
+                "Tap colors and shapes in the exact order shown",
+                "Wrong tap costs a life — but you stay on the same step",
+                "Perfect round? Earn a bonus +15 points",
+                "Sequence grows longer as you progress"
+            ]
         }
     }
-    
+
     var ruleIcons: [String] {
         switch self {
         case .classic:
@@ -105,6 +121,8 @@ enum GameMode: CaseIterable, Identifiable {
             return ["hand.tap.fill", "timer", "minus.circle.fill", "flame.fill"]
         case .chaos:
             return ["paintpalette.fill", "square.on.circle", "xmark.circle.fill", "speedometer", "arrow.triangle.swap"]
+        case .sequence:
+            return ["eye.fill", "hand.tap.fill", "heart.fill", "star.fill", "arrow.up.right"]
         }
     }
 }

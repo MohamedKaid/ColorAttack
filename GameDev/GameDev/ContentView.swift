@@ -21,7 +21,7 @@ let colorPool: [GameColor] = [
 
 struct ContentView: View {
     @State private var currentScreen: AppScreen = .start
-    
+
     var body: some View {
         switch currentScreen {
         case .start:
@@ -29,10 +29,10 @@ struct ContentView: View {
                 .onAppear {
                     GameCenterAuth.authenticate()
                 }
-            
+
         case .modeSelection:
             ModeSelectionView(currentScreen: $currentScreen)
-            
+
         case .classic:
             ClassicModeView(
                 currentScreen: $currentScreen,
@@ -49,7 +49,7 @@ struct ContentView: View {
                     rules: ClassicRules()
                 )
             )
-            
+
         case .rapid:
             ClassicModeView(
                 currentScreen: $currentScreen,
@@ -66,7 +66,7 @@ struct ContentView: View {
                     rules: RapidRules()
                 )
             )
-            
+
         case .chaos:
             ChaosModeView(
                 currentScreen: $currentScreen,
@@ -83,32 +83,27 @@ struct ContentView: View {
                     rules: ChaosRules()
                 )
             )
+
+        case .sequence:
+            // TODO: Replace leaderboardID with real Game Center ID once created
+            SequenceModeView(
+                currentScreen: $currentScreen,
+                engine: GameEngine(
+                    lives: Lives(max: 5),
+                    colorPool: colorPool,
+                    config: ModeConfig(
+                        cardsPerGrid: 12,
+                        tapTimeLimit: 999,
+                        usesLives: true,
+                        totalGameTimeLimit: nil,
+                        leaderboardID: "com.example.ColorAttack.Sequence.Placeholder"
+                    ),
+                    rules: nil
+                )
+            )
         }
     }
 }
-
-
-//import SwiftUI
-//import UIKit // UIFont is part of UIKit
-//
-//struct ContentView: View {
-//    var body: some View {
-//        Text("Printing all available fonts to the console...")
-//            .onAppear {
-//                printAllFonts()
-//            }
-//    }
-//
-//    func printAllFonts() {
-//        for familyName in UIFont.familyNames.sorted() {
-//            print("Family: \(familyName)")
-//            let names = UIFont.fontNames(forFamilyName: familyName)
-//            for fontName in names {
-//                print("  - \(fontName)")
-//            }
-//        }
-//    }
-//}
 
 #Preview {
     ContentView()

@@ -36,7 +36,7 @@ struct SequenceModeView_iPad: View {
     @State private var bestScore: Int = 0
 
     // TODO: Replace with real Game Center leaderboard ID once created
-    private let leaderboardID = "com.example.ColorAttack.Sequence.Placeholder"
+    private let leaderboardID = "com.example.ColorAttack.Sequence"
 
     // MARK: - Body
 

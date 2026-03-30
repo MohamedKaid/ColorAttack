@@ -96,7 +96,7 @@ struct ContentView: View {
                         tapTimeLimit: 999,
                         usesLives: true,
                         totalGameTimeLimit: nil,
-                        leaderboardID: "com.example.ColorAttack.Sequence.Placeholder"
+                        leaderboardID: "com.example.ColorAttack.Sequence"
                     ),
                     rules: nil
                 )

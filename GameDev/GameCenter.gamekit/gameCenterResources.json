@@ -4,15 +4,37 @@
   },
   "resources" : {
     "leaderboardLocalizations" : {
+      "com.example.ColorAttack.Chaos" : [
+        {
+          "formatterOverride" : "INTEGER",
+          "locale" : "en-US",
+          "localID" : "com.example.ColorAttack.Chaos-en-US",
+          "name" : "Chaos"
+        }
+      ],
       "com.example.ColorAttack.Classic" : [
         {
-          "description" : "Highest Score in Classic",
+          "description" : "Scores for Classic Mode",
           "formatterOverride" : "INTEGER",
-          "formatterSuffix" : "",
-          "formatterSuffixSingular" : "",
           "locale" : "en-US",
           "localID" : "com.example.ColorAttack.Classic-en-US",
-          "name" : "Classic Mode"
+          "name" : "Classic"
+        }
+      ],
+      "com.example.ColorAttack.Rapid" : [
+        {
+          "formatterOverride" : "INTEGER",
+          "locale" : "en-US",
+          "localID" : "com.example.ColorAttack.Rapid-en-US",
+          "name" : "Rapid"
+        }
+      ],
+      "com.example.ColorAttack.Sequence" : [
+        {
+          "formatterOverride" : "INTEGER",
+          "locale" : "en-US",
+          "localID" : "com.example.ColorAttack.Sequence-en-US",
+          "name" : "Sequence"
         }
       ]
     },
@@ -48,6 +70,17 @@
         "scoreSortType" : "DESC",
         "submissionType" : "BEST_SCORE",
         "vendorIdentifier" : "com.example.ColorAttack.Chaos",
+        "visibility" : "SHOW_FOR_ALL"
+      },
+      {
+        "archived" : false,
+        "defaultFormatter" : "INTEGER",
+        "referenceName" : "Sequence",
+        "scoreRangeEnd" : null,
+        "scoreRangeStart" : null,
+        "scoreSortType" : "ASC",
+        "submissionType" : "BEST_SCORE",
+        "vendorIdentifier" : "com.example.ColorAttack.Sequence",
         "visibility" : "SHOW_FOR_ALL"
       }
     ]

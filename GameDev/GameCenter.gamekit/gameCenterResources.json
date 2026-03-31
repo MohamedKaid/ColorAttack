@@ -78,7 +78,7 @@
         "referenceName" : "Sequence",
         "scoreRangeEnd" : null,
         "scoreRangeStart" : null,
-        "scoreSortType" : "ASC",
+        "scoreSortType" : "DESC",
         "submissionType" : "BEST_SCORE",
         "vendorIdentifier" : "com.example.ColorAttack.Sequence",
         "visibility" : "SHOW_FOR_ALL"

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import GameKit
 
 struct SequenceModeView_iPhone: View {
     @Binding var currentScreen: AppScreen
@@ -34,6 +35,7 @@ struct SequenceModeView_iPhone: View {
     @State private var animateHearts: Bool = false
 
     @State private var bestScore: Int = 0
+    @State private var didSubmitScore: Bool = false
 
     // TODO: Replace with real Game Center leaderboard ID once created
     private let leaderboardID = "com.example.ColorAttack.Sequence"
@@ -129,7 +131,6 @@ struct SequenceModeView_iPhone: View {
         let spacing = w * 0.025
         let cardW = (w - horizontalPadding * 2 - spacing * CGFloat(columns - 1)) / CGFloat(columns)
         let cardH = cardW * 0.72
-
         let safeGrid = Array(grid.prefix(12))
 
         return LazyVGrid(
@@ -334,6 +335,7 @@ struct SequenceModeView_iPhone: View {
     private func handleAppear() {
         AudioPlayer.shared.playMusic("Classic Theme")
         showCountdown = true
+        didSubmitScore = false
         loadMyBestScore(leaderboardID: leaderboardID) { s in
             bestScore = s
         }
@@ -384,9 +386,41 @@ struct SequenceModeView_iPhone: View {
             if lives <= 0 {
                 isGameOver = true
                 engine.stop()
+                submitScore()
             }
         }
     }
+
+    // MARK: - Score Submission
+
+    private func submitScore() {
+        guard !didSubmitScore else { return }
+
+        guard GKLocalPlayer.local.isAuthenticated else {
+            print("Game Center not authenticated — score not submitted.")
+            return
+        }
+
+        didSubmitScore = true
+        print("Submitting Sequence score \(score) to \(leaderboardID)")
+
+        Task {
+            do {
+                try await GKLeaderboard.submitScore(
+                    score,
+                    context: 0,
+                    player: GKLocalPlayer.local,
+                    leaderboardIDs: [leaderboardID]
+                )
+                print("Sequence score submitted:", score)
+            } catch {
+                print("Sequence score submit failed:", error.localizedDescription)
+                didSubmitScore = false
+            }
+        }
+    }
+
+    // MARK: - Helpers
 
     private func showFeedback(text: String, color: Color) {
         feedbackText = text

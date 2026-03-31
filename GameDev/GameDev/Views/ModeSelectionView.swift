@@ -13,15 +13,8 @@ struct ModeSelectionView: View {
     @State private var dragX: CGFloat = 0
     @State private var showSettings = false
 
-    // ✅ Dynamic sizing based on screen
-    private var cardWidth: CGFloat {
-        UIScreen.main.bounds.width * 0.62
-    }
-    private var cardHeight: CGFloat {
-        UIScreen.main.bounds.height * 0.50
-    }
-    private var cardSpacing: CGFloat {
-        UIScreen.main.bounds.width * 0.04
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
     }
 
     private var visibleModes: [GameMode] {
@@ -29,24 +22,40 @@ struct ModeSelectionView: View {
     }
 
     var body: some View {
-        GeometryReader { geo in  // ✅ Added GeometryReader
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+
+            // On iPad landscape the card should be height-constrained
+            // On iPhone it stays width-constrained like before
+            let cardHeight: CGFloat = isIPad
+                ? h * 0.60
+                : h * 0.50
+
+            let cardWidth: CGFloat = isIPad
+                ? min(cardHeight * 0.72, w * 0.38)
+                : w * 0.62
+
+            let cardSpacing: CGFloat = isIPad
+                ? w * 0.025
+                : w * 0.04
+
             ZStack {
                 GameBackground(mode: .menu)
                     .ignoresSafeArea()
 
-                // Main Content
                 VStack(spacing: 0) {
-                    Spacer(minLength: geo.size.height * 0.03) // ✅ Dynamic
+                    Spacer(minLength: h * 0.03)
 
                     // Title
                     Text("SELECT MODE")
-                        .font(.custom("Candy-Planet", size: geo.size.width * 0.07)) // ✅ Dynamic font
+                        .font(.custom("Candy-Planet", size: isIPad ? h * 0.08 : w * 0.07))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
-                        .padding(.top, geo.size.height * 0.01) // ✅ Dynamic
+                        .padding(.top, h * 0.01)
                         .accessibilityAddTraits(.isHeader)
 
-                    Spacer(minLength: geo.size.height * 0.03) // ✅ Dynamic
+                    Spacer(minLength: h * 0.03)
 
                     // Carousel
                     ZStack {
@@ -60,7 +69,7 @@ struct ModeSelectionView: View {
                             isSelected: false,
                             onStart: { navigateToMode(modes[wrappedIndex(currentIndex - 1, count)]) }
                         )
-                        .frame(width: cardWidth, height: cardHeight) // ✅ Now dynamic
+                        .frame(width: cardWidth, height: cardHeight)
                         .scaleEffect(0.88)
                         .opacity(0.5)
                         .offset(x: -sideOffset + dragX * 0.35)
@@ -73,7 +82,7 @@ struct ModeSelectionView: View {
                             isSelected: false,
                             onStart: { navigateToMode(modes[wrappedIndex(currentIndex + 1, count)]) }
                         )
-                        .frame(width: cardWidth, height: cardHeight) // ✅ Now dynamic
+                        .frame(width: cardWidth, height: cardHeight)
                         .scaleEffect(0.88)
                         .opacity(0.5)
                         .offset(x: sideOffset + dragX * 0.35)
@@ -86,7 +95,7 @@ struct ModeSelectionView: View {
                             isSelected: true,
                             onStart: { navigateToMode(modes[currentIndex]) }
                         )
-                        .frame(width: cardWidth, height: cardHeight) // ✅ Now dynamic
+                        .frame(width: cardWidth, height: cardHeight)
                         .offset(x: dragX)
                         .accessibilityLabel("\(modes[currentIndex].title) mode, selected")
                     }
@@ -136,7 +145,7 @@ struct ModeSelectionView: View {
                         }
                     }
 
-                    Spacer(minLength: geo.size.height * 0.02) // ✅ Dynamic
+                    Spacer(minLength: h * 0.02)
 
                     // Page Indicators
                     HStack(spacing: 8) {
@@ -150,7 +159,7 @@ struct ModeSelectionView: View {
                                 .animation(.spring(response: 0.3), value: currentIndex)
                         }
                     }
-                    .padding(.bottom, geo.size.height * 0.015) // ✅ Dynamic
+                    .padding(.bottom, h * 0.015)
                     .accessibilityHidden(true)
 
                     // Mode Label
@@ -171,7 +180,7 @@ struct ModeSelectionView: View {
                         .animation(.easeInOut(duration: 0.2), value: currentIndex)
                         .accessibilityHidden(true)
 
-                    Spacer(minLength: geo.size.height * 0.04) // ✅ Dynamic
+                    Spacer(minLength: h * 0.04)
                 }
                 .onAppear {
                     currentIndex = min(currentIndex, visibleModes.count - 1)

@@ -12,8 +12,6 @@ struct SequenceModeView_iPad: View {
     @Binding var currentScreen: AppScreen
     @ObservedObject var engine: GameEngine
 
-    // MARK: - State
-
     @State private var sequenceRules = SequenceRules()
     @State private var grid: [SequenceGridItem] = []
     @State private var sequence: [SequenceItem] = []
@@ -33,14 +31,11 @@ struct SequenceModeView_iPad: View {
     @State private var feedbackColor: Color = .clear
     @State private var showLifeLostFlash: Bool = false
     @State private var animateHearts: Bool = false
-
     @State private var bestScore: Int = 0
     @State private var didSubmitScore: Bool = false
 
     // TODO: Replace with real Game Center leaderboard ID once created
-    private let leaderboardID = "com.example.ColorAttack.Sequence"
-
-    // MARK: - Body
+    private let leaderboardID = "com.example.ColorAttack.Sequence.Placeholder"
 
     var body: some View {
         GeometryReader { geo in
@@ -59,62 +54,74 @@ struct SequenceModeView_iPad: View {
                 }
 
                 if showRecallPhase {
-                    recallContent(w: w, h: h)
+                    mainContent(w: w, h: h)
                 }
 
                 overlays
             }
             .safeAreaInset(edge: .top) {
-                header(w: w)
+                header(w: w, h: h)
             }
             .onAppear { handleAppear() }
             .onDisappear { engine.stop() }
         }
     }
 
-    // MARK: - Recall Content
+    // MARK: - Main Content
 
-    private func recallContent(w: CGFloat, h: CGFloat) -> some View {
-        VStack(spacing: h * 0.02) {
-            Spacer(minLength: h * 0.02)
-            sequenceProgressView(w: w)
-            feedbackToast(w: w)
-            gridView(w: w)
-            Spacer()
+    private func mainContent(w: CGFloat, h: CGFloat) -> some View {
+        HStack(spacing: 0) {
+
+            // Left panel — progress tracker + feedback
+            VStack(spacing: h * 0.03) {
+                Spacer()
+
+                Text("TAP IN ORDER")
+                    .font(.system(size: h * 0.02, weight: .bold))
+                    .foregroundColor(.white.opacity(0.6))
+                    .tracking(2)
+
+                sequenceProgressView(w: w, h: h)
+
+                feedbackToast(h: h)
+
+                Spacer()
+            }
+            .frame(width: w * 0.18)
+            .padding(.leading, w * 0.02)
+
+            // Right panel — 3 column grid fills remaining space
+            gridView(w: w, h: h)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, w * 0.02)
         }
         .blur(radius: showSettings ? 8 : 0)
         .allowsHitTesting(!showSettings)
     }
 
-    // MARK: - Sequence Progress Bar
+    // MARK: - Sequence Progress
 
-    private func sequenceProgressView(w: CGFloat) -> some View {
-        VStack(spacing: w * 0.015) {
-            Text("TAP IN ORDER")
-                .font(.system(size: w * 0.025, weight: .bold))
-                .foregroundColor(.white.opacity(0.6))
-                .tracking(4)
-
-            HStack(spacing: w * 0.012) {
-                ForEach(0..<sequence.count, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: w * 0.006)
+    private func sequenceProgressView(w: CGFloat, h: CGFloat) -> some View {
+        VStack(spacing: h * 0.012) {
+            ForEach(0..<sequence.count, id: \.self) { i in
+                HStack(spacing: w * 0.008) {
+                    Circle()
                         .fill(progressColor(for: i))
-                        .frame(
-                            width: i == sequenceIndex ? w * 0.045 : w * 0.03,
-                            height: w * 0.014
-                        )
-                        .animation(.spring(response: 0.3), value: sequenceIndex)
+                        .frame(width: h * 0.018, height: h * 0.018)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(progressColor(for: i))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: h * 0.01)
                 }
+                .animation(.spring(response: 0.3), value: sequenceIndex)
             }
-            .padding(.horizontal, w * 0.03)
         }
-        .padding(.vertical, w * 0.018)
-        .padding(.horizontal, w * 0.03)
+        .padding(h * 0.018)
         .background(
-            RoundedRectangle(cornerRadius: w * 0.02)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color.black.opacity(0.35))
         )
-        .padding(.horizontal, w * 0.04)
     }
 
     private func progressColor(for index: Int) -> Color {
@@ -123,20 +130,22 @@ struct SequenceModeView_iPad: View {
         return Color.white.opacity(0.25)
     }
 
-    // MARK: - Grid
+    // MARK: - Grid (3 columns to avoid overflow)
 
-    private func gridView(w: CGFloat) -> some View {
-        let columns = 3
-        let horizontalPadding = w * 0.06
-        let spacing = w * 0.02
-        let maxGridWidth: CGFloat = 900
-        let effectiveW = min(w, maxGridWidth)
-        let cardW = (effectiveW - horizontalPadding * 2 - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+    private func gridView(w: CGFloat, h: CGFloat) -> some View {
+        let columnCount = 3
+        let rowCount = 4
+        let spacing: CGFloat = h * 0.028
+
+        // Available width is everything after the left panel and paddings
+        let availableW = w * 0.76
+        let cardW = (availableW - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
         let cardH = cardW * 0.65
+
         let safeGrid = Array(grid.prefix(12))
 
         return LazyVGrid(
-            columns: Array(repeating: GridItem(.fixed(cardW), spacing: spacing), count: columns),
+            columns: Array(repeating: GridItem(.fixed(cardW), spacing: spacing), count: columnCount),
             spacing: spacing
         ) {
             ForEach(safeGrid) { item in
@@ -150,8 +159,6 @@ struct SequenceModeView_iPad: View {
                 .disabled(isGameOver)
             }
         }
-        .frame(maxWidth: maxGridWidth)
-        .padding(.horizontal, horizontalPadding)
     }
 
     @ViewBuilder
@@ -166,19 +173,19 @@ struct SequenceModeView_iPad: View {
 
     // MARK: - Feedback Toast
 
-    private func feedbackToast(w: CGFloat) -> some View {
+    private func feedbackToast(h: CGFloat) -> some View {
         ZStack {
             if !feedbackText.isEmpty {
-                HStack(spacing: w * 0.01) {
+                HStack(spacing: 6) {
                     Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundColor(feedbackColor)
-                        .font(.system(size: w * 0.025, weight: .bold))
+                        .font(.system(size: h * 0.024, weight: .bold))
                     Text(feedbackText)
-                        .font(.system(size: w * 0.025, weight: .semibold))
+                        .font(.system(size: h * 0.024, weight: .semibold))
                         .foregroundColor(.white)
                 }
-                .padding(.horizontal, w * 0.025)
-                .padding(.vertical, w * 0.012)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
                 .background(
                     Capsule()
                         .fill(feedbackColor.opacity(0.3))
@@ -190,7 +197,7 @@ struct SequenceModeView_iPad: View {
                 ))
             }
         }
-        .frame(height: w * 0.055)
+        .frame(height: 36)
         .animation(.easeOut(duration: 0.2), value: feedbackText)
     }
 
@@ -229,92 +236,81 @@ struct SequenceModeView_iPad: View {
     private var gameOverOverlay: some View {
         ZStack {
             Color.black.opacity(0.7).ignoresSafeArea()
-
             VStack(spacing: 16) {
                 Text("Game Over")
-                    .font(.largeTitle)
-                    .bold()
-                    .foregroundColor(.white)
-
+                    .font(.largeTitle).bold().foregroundColor(.white)
                 Text("Final Score: \(score)")
-                    .font(.headline)
-                    .foregroundColor(.white.opacity(0.9))
-
+                    .font(.headline).foregroundColor(.white.opacity(0.9))
                 Button("Home") {
                     engine.stop()
                     currentScreen = .modeSelection
                 }
-                .buttonStyle(.bordered)
-                .tint(.green)
+                .buttonStyle(.bordered).tint(.green)
             }
             .padding(40)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color.black.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                    )
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.2), lineWidth: 1))
             )
         }
     }
 
     // MARK: - Header
 
-    private func header(w: CGFloat) -> some View {
-        ZStack {
-            HStack {
-                Button {
-                    engine.stop()
-                    currentScreen = .modeSelection
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: w * 0.028, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.8))
-                }
-
-                Text("Best: \(bestScore)")
-                    .font(.system(size: w * 0.036, weight: .bold))
-                    .foregroundColor(.white)
-
-                Spacer()
+    private func header(w: CGFloat, h: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            Button {
+                engine.stop()
+                currentScreen = .modeSelection
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: h * 0.03, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
             }
+            .padding(.leading, w * 0.02)
 
-            HStack(spacing: w * 0.012) {
+            Text("Best: \(bestScore)")
+                .font(.system(size: h * 0.03, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.leading, 8)
+
+            Spacer()
+
+            // Lives centre
+            HStack(spacing: 10) {
                 ForEach(0..<lives, id: \.self) { _ in
                     Image(systemName: "heart.fill")
                         .foregroundColor(.red)
-                        .font(.system(size: w * 0.04, weight: .bold))
+                        .font(.system(size: h * 0.038, weight: .bold))
                         .scaleEffect(animateHearts ? 0.7 : 1.0)
                         .animation(.spring(response: 0.25, dampingFraction: 0.6), value: animateHearts)
                 }
             }
 
-            HStack {
-                Spacer()
+            Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("SCORE")
-                        .font(.system(size: w * 0.018, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    Text("\(score)")
-                        .font(.system(size: w * 0.038, weight: .bold))
-                        .foregroundColor(.white)
-                }
-
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) { showSettings = true }
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: w * 0.028, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .padding(.leading, w * 0.02)
-                .padding(.trailing, w * 0.025)
+            // Score + Settings
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("SCORE")
+                    .font(.system(size: h * 0.016, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                Text("\(score)")
+                    .font(.system(size: h * 0.034, weight: .bold))
+                    .foregroundColor(.white)
             }
+
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { showSettings = true }
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: h * 0.028))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, w * 0.02)
         }
-        .padding(.horizontal, w * 0.03)
-        .padding(.vertical, w * 0.018)
+        .padding(.vertical, h * 0.015)
         .background(Color.black.opacity(0.5))
     }
 
@@ -324,9 +320,7 @@ struct SequenceModeView_iPad: View {
         AudioPlayer.shared.playMusic("Classic Theme")
         showCountdown = true
         didSubmitScore = false
-        loadMyBestScore(leaderboardID: leaderboardID) { s in
-            bestScore = s
-        }
+        loadMyBestScore(leaderboardID: leaderboardID) { s in bestScore = s }
     }
 
     private func startRound() {
@@ -355,9 +349,7 @@ struct SequenceModeView_iPad: View {
                         showFeedback(text: "+\(bonus) BONUS!", color: .yellow)
                     }
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    startRound()
-                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { startRound() }
             }
         } else {
             lives -= 1
@@ -379,24 +371,14 @@ struct SequenceModeView_iPad: View {
         }
     }
 
-    // MARK: - Score Submission
-
     private func submitScore() {
         guard !didSubmitScore else { return }
-
-        guard GKLocalPlayer.local.isAuthenticated else {
-            print("Game Center not authenticated — score not submitted.")
-            return
-        }
-
+        guard GKLocalPlayer.local.isAuthenticated else { return }
         didSubmitScore = true
-        print("Submitting Sequence score \(score) to \(leaderboardID)")
-
         Task {
             do {
                 try await GKLeaderboard.submitScore(
-                    score,
-                    context: 0,
+                    score, context: 0,
                     player: GKLocalPlayer.local,
                     leaderboardIDs: [leaderboardID]
                 )
@@ -408,20 +390,14 @@ struct SequenceModeView_iPad: View {
         }
     }
 
-    // MARK: - Helpers
-
     private func showFeedback(text: String, color: Color) {
         feedbackText = text
         feedbackColor = color
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            if feedbackText == text {
-                withAnimation { feedbackText = "" }
-            }
+            if feedbackText == text { withAnimation { feedbackText = "" } }
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     SequenceModeView_iPad(

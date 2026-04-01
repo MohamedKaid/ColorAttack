@@ -1,6 +1,6 @@
 //
 //  ChaosModeView_iPad.swift
-//  GameDev
+//  Color Frenzy
 //
 //  Created by Mohamed Shahbain on 2/2/26.
 //
@@ -11,7 +11,7 @@ struct ChaosModeView_iPad: View {
     @Binding var currentScreen: AppScreen
     @StateObject var engine: GameEngine
 
-    @State private var bestClassicScore = 0
+    @State private var bestChaosScore = 0
     @State private var swapSides = false
     @State private var lastLives: Int = 0
     @State private var lastScore: Int = 0
@@ -24,151 +24,179 @@ struct ChaosModeView_iPad: View {
     @State private var feedbackColor: Color = .clear
 
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let h = geo.size.height
+        ZStack {
+            GameBackground(mode: .chaos)
+                .ignoresSafeArea()
 
-            ZStack {
-                GameBackground(mode: .chaos)
+            if showLifeLostFlash {
+                Color.red.opacity(0.25)
                     .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
 
-                if showLifeLostFlash {
-                    Color.red.opacity(0.25)
-                        .ignoresSafeArea()
-                        .allowsHitTesting(false)
-                        .transition(.opacity)
-                }
-
+            // GeometryReader INSIDE the safe-area-respecting ZStack
+            // so w/h reflect the actual usable canvas, not the full screen
+            GeometryReader { geo in
+                let w = geo.size.width
+                let h = geo.size.height
                 mainContent(w: w, h: h)
+            }
 
-                overlays
-            }
-            .safeAreaInset(edge: .top) {
-                header(w: w, h: h)
-            }
-            .onChange(of: engine.round) { _, _ in
-                swapSides = engine.round >= 12 ? Bool.random() : false
-            }
-            .onChange(of: engine.lives.current) { _, _ in handleLivesChange() }
-            .onChange(of: engine.score) { _, _ in handleScoreChange() }
-            .onAppear { handleAppear() }
-            .onDisappear { engine.stop() }
+            overlays
         }
+        .safeAreaInset(edge: .top) {
+            GeometryReader { geo in
+                header(w: geo.size.width)
+                    .frame(width: geo.size.width)
+            }
+            .frame(height: 56)
+        }
+        .onChange(of: engine.round) { _, _ in
+            swapSides = engine.round >= 12 ? Bool.random() : false
+        }
+        .onChange(of: engine.lives.current) { _, _ in handleLivesChange() }
+        .onChange(of: engine.score) { _, _ in handleScoreChange() }
+        .onAppear { handleAppear() }
+        .onDisappear { engine.stop() }
     }
 
     // MARK: - Main Content
+    // Landscape layout: 38% left grid | 24% centre | 38% right grid
 
     private func mainContent(w: CGFloat, h: CGFloat) -> some View {
-        // Landscape: centre panel for prompt/timer, flanked by two grids
-        HStack(spacing: w * 0.02) {
 
-            // Left grid — colors or shapes depending on swapSides
-            if swapSides {
-                shapesGrid(w: w, h: h)
-            } else {
-                colorsGrid(w: w, h: h)
-            }
+        // Grid panels
+        let gridPanelW = w * 0.38
+        let centrePanelW = w * 0.24
+        let columnCount = 2
+        let cardSpacing: CGFloat = 10
+        let outerPadding: CGFloat = 14
 
-            // Centre panel
-            VStack(spacing: h * 0.025) {
-                Spacer()
-                ChaosInstructionView(text: engine.promptText)
-                feedbackToast(w: w)
-                tapTimerView(w: w, h: h)
-                Spacer()
-            }
-            .frame(width: w * 0.3)
+        let cardW = (gridPanelW - outerPadding * 2 - cardSpacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
 
-            // Right grid
-            if swapSides {
-                colorsGrid(w: w, h: h)
-            } else {
-                shapesGrid(w: w, h: h)
-            }
+        // Fit 3 rows inside the available height (label + 3 rows + spacing + vertical padding)
+        let labelAndPadding: CGFloat = 52
+        let rowCount: CGFloat = 3
+        let totalRowSpacing = cardSpacing * (rowCount - 1)
+        let maxCardH = (h - labelAndPadding - totalRowSpacing) / rowCount
+        let cardH = min(cardW * 0.80, maxCardH)
+
+        return HStack(spacing: 0) {
+            gridPanel(
+                title: swapSides ? "SHAPES" : "COLORS",
+                icon: swapSides ? "square.on.circle.fill" : "paintpalette.fill",
+                panelW: gridPanelW,
+                cardW: cardW,
+                cardH: cardH,
+                outerPadding: outerPadding,
+                cardSpacing: cardSpacing,
+                isShapes: swapSides
+            )
+
+            centrePanel(panelW: centrePanelW, availableH: h)
+                .frame(width: centrePanelW)
+
+            gridPanel(
+                title: swapSides ? "COLORS" : "SHAPES",
+                icon: swapSides ? "paintpalette.fill" : "square.on.circle.fill",
+                panelW: gridPanelW,
+                cardW: cardW,
+                cardH: cardH,
+                outerPadding: outerPadding,
+                cardSpacing: cardSpacing,
+                isShapes: !swapSides
+            )
         }
-        .padding(.horizontal, w * 0.02)
         .animation(.easeInOut(duration: 0.25), value: swapSides)
         .blur(radius: showCountdown || showSettings ? 8 : 0)
         .allowsHitTesting(!showCountdown && !showSettings)
     }
 
-    // MARK: - Color Grid
+    // MARK: - Grid Panel
 
-    private func colorsGrid(w: CGFloat, h: CGFloat) -> some View {
-        let columnCount = 3
-        let spacing: CGFloat = h * 0.022
-        let panelW = w * 0.32
-        let cardW = (panelW - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
-        let cardH = cardW * 0.75
+    private func gridPanel(
+        title: String,
+        icon: String,
+        panelW: CGFloat,
+        cardW: CGFloat,
+        cardH: CGFloat,
+        outerPadding: CGFloat,
+        cardSpacing: CGFloat,
+        isShapes: Bool
+    ) -> some View {
+        let columns = Array(repeating: GridItem(.fixed(cardW), spacing: cardSpacing), count: 2)
 
-        return VStack(spacing: h * 0.015) {
-            Text("COLORS")
-                .font(.system(size: h * 0.022, weight: .bold))
-                .foregroundColor(.white.opacity(0.7))
+        return VStack(spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                Text(title)
+                    .font(.system(size: 13, weight: .bold))
+            }
+            .foregroundColor(.white.opacity(0.65))
+            .font(.system(size: 13))
 
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.fixed(cardW), spacing: spacing), count: columnCount),
-                spacing: spacing
-            ) {
-                ForEach(engine.gridColors) { gameColor in
-                    Button {
-                        engine.handleTap(action: .colorTap(gameColor))
-                    } label: {
-                        CardView(gameColor: gameColor)
-                            .frame(width: cardW, height: cardH)
+            if isShapes {
+                LazyVGrid(columns: columns, spacing: cardSpacing) {
+                    ForEach(engine.gridShapes) { shape in
+                        Button {
+                            engine.handleTap(action: .shapeTap(shape))
+                        } label: {
+                            ShapeCardView(shape: shape)
+                                .frame(width: cardW, height: cardH)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(engine.isGameOver)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(engine.isGameOver)
+                }
+            } else {
+                LazyVGrid(columns: columns, spacing: cardSpacing) {
+                    ForEach(engine.gridColors) { gameColor in
+                        Button {
+                            engine.handleTap(action: .colorTap(gameColor))
+                        } label: {
+                            CardView(gameColor: gameColor)
+                                .frame(width: cardW, height: cardH)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(engine.isGameOver)
+                    }
                 }
             }
         }
         .frame(width: panelW)
+        .frame(maxHeight: .infinity, alignment: .center)
+        .padding(.vertical, 12)
     }
 
-    // MARK: - Shape Grid
+    // MARK: - Centre Panel
 
-    private func shapesGrid(w: CGFloat, h: CGFloat) -> some View {
-        let columnCount = 2
-        let spacing: CGFloat = h * 0.022
-        let panelW = w * 0.32
-        let cardW = (panelW - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
-        let cardH = cardW * 0.85
+    private func centrePanel(panelW: CGFloat, availableH: CGFloat) -> some View {
+        VStack(spacing: 16) {
+            Spacer()
 
-        return VStack(spacing: h * 0.015) {
-            Text("SHAPES")
-                .font(.system(size: h * 0.022, weight: .bold))
-                .foregroundColor(.white.opacity(0.7))
+            ChaosInstructionView(text: engine.promptText)
 
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.fixed(cardW), spacing: spacing), count: columnCount),
-                spacing: spacing
-            ) {
-                ForEach(engine.gridShapes) { shape in
-                    Button {
-                        engine.handleTap(action: .shapeTap(shape))
-                    } label: {
-                        ShapeCardView(shape: shape)
-                            .frame(width: cardW, height: cardH)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(engine.isGameOver)
-                }
-            }
+            feedbackToast
+
+            tapTimerView
+
+            Spacer()
         }
-        .frame(width: panelW)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Tap Timer
 
-    private func tapTimerView(w: CGFloat, h: CGFloat) -> some View {
+    private var tapTimerView: some View {
         let isUrgent = engine.remainingTapTime < 1.0
 
-        return HStack(spacing: 8) {
+        return HStack(spacing: 6) {
             Image(systemName: "hand.tap.fill")
                 .foregroundColor(isUrgent ? .red : .yellow)
-                .font(.system(size: h * 0.03))
+                .font(.system(size: 16))
             Text(String(format: "%.1f s", engine.remainingTapTime))
-                .font(.system(size: h * 0.035, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(isUrgent ? .red : .white)
         }
         .padding(.horizontal, 16)
@@ -178,7 +206,7 @@ struct ChaosModeView_iPad: View {
                 .fill(isUrgent ? Color.red.opacity(0.3) : Color.black.opacity(0.4))
                 .overlay(Capsule().stroke(Color.white.opacity(0.2), lineWidth: 1))
         )
-        .scaleEffect(flashTimer ? 1.1 : 1.0)
+        .scaleEffect(flashTimer ? 1.08 : 1.0)
         .onChange(of: isUrgent) { _, newValue in flashTimer = newValue }
         .animation(
             flashTimer ? .easeInOut(duration: 0.4).repeatForever(autoreverses: true) : .default,
@@ -188,15 +216,15 @@ struct ChaosModeView_iPad: View {
 
     // MARK: - Feedback Toast
 
-    private func feedbackToast(w: CGFloat) -> some View {
+    private var feedbackToast: some View {
         ZStack {
             if !feedbackText.isEmpty {
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
                     Image(systemName: feedbackColor == .green ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .foregroundColor(feedbackColor)
-                        .font(.system(size: w * 0.018, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                     Text(feedbackText)
-                        .font(.system(size: w * 0.018, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
                 }
                 .padding(.horizontal, 14)
@@ -212,7 +240,7 @@ struct ChaosModeView_iPad: View {
                 ))
             }
         }
-        .frame(height: 36)
+        .frame(height: 34)
         .animation(.easeOut(duration: 0.2), value: feedbackText)
     }
 
@@ -238,82 +266,118 @@ struct ChaosModeView_iPad: View {
 
     private var gameOverOverlay: some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
-            VStack(spacing: 16) {
+            Color.black.opacity(0.75).ignoresSafeArea()
+
+            VStack(spacing: 14) {
                 Text("Game Over")
-                    .font(.largeTitle).bold().foregroundColor(.white)
+                    .font(.system(size: 32, weight: .heavy))
+                    .foregroundColor(.white)
+
                 Text("Final Score: \(engine.score)")
-                    .font(.headline).foregroundColor(.white.opacity(0.9))
-                Button("Home") {
-                    engine.stop()
-                    currentScreen = .modeSelection
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.85))
+
+                Text("Best: \(bestChaosScore)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.55))
+
+                HStack(spacing: 14) {
+                    Button("Home") {
+                        engine.stop()
+                        currentScreen = .modeSelection
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(minWidth: 110, minHeight: 44)
+                    .buttonStyle(.bordered)
+                    .tint(.white)
+
+                    Button("Play Again") {
+                        showCountdown = true
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(minWidth: 110, minHeight: 44)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-                .buttonStyle(.bordered).tint(.blue)
+                .padding(.top, 4)
             }
-            .padding(40)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 32)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.8))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white.opacity(0.2), lineWidth: 1))
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.black.opacity(0.82))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                    )
             )
         }
     }
 
     // MARK: - Header
+    // Fixed pt sizes — header should look the same regardless of screen size
 
-    private func header(w: CGFloat, h: CGFloat) -> some View {
-        ZStack {
-            HStack {
-                Button {
-                    engine.stop()
-                    currentScreen = .modeSelection
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: h * 0.03, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.8))
-                }
+    private func header(w: CGFloat) -> some View {
+        HStack(spacing: 8) {
 
-                Text("Best: \(bestClassicScore)")
-                    .font(.system(size: h * 0.032, weight: .bold))
+            Button {
+                engine.stop()
+                currentScreen = .modeSelection
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.85))
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.black.opacity(0.25)))
+            }
+            .padding(.leading, w * 0.015)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Best")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.6))
+                Text("\(bestChaosScore)")
+                    .font(.system(size: 17, weight: .bold))
                     .foregroundColor(.white)
-
-                Spacer()
             }
 
-            HStack(spacing: 10) {
+            Spacer()
+
+            // Lives centred in header
+            HStack(spacing: 8) {
                 ForEach(0..<engine.lives.current, id: \.self) { _ in
                     Image(systemName: "heart.fill")
                         .foregroundColor(.red)
-                        .font(.system(size: h * 0.04, weight: .bold))
-                        .scaleEffect(animateHearts ? 0.7 : 1.0)
+                        .font(.system(size: 20, weight: .bold))
+                        .scaleEffect(animateHearts ? 0.72 : 1.0)
                         .animation(.spring(response: 0.25, dampingFraction: 0.6), value: animateHearts)
                 }
             }
 
-            HStack {
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("SCORE")
-                        .font(.system(size: h * 0.018, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    Text("\(engine.score)")
-                        .font(.system(size: h * 0.038, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) { showSettings = true }
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: h * 0.03))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .padding(.leading, 12)
-                .padding(.trailing, 20)
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("SCORE")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.6))
+                Text("\(engine.score)")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(.white)
             }
+
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { showSettings = true }
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(Color.black.opacity(0.25)))
+            }
+            .padding(.trailing, w * 0.015)
         }
-        .padding(.horizontal, w * 0.025)
-        .padding(.vertical, h * 0.015)
-        .background(Color.black.opacity(0.5))
+        .padding(.vertical, 10)
+        .background(Color.black.opacity(0.45))
     }
 
     // MARK: - Event Handlers
@@ -341,11 +405,12 @@ struct ChaosModeView_iPad: View {
     }
 
     private func handleAppear() {
+        AudioPlayer.shared.playMusic("Chaos Theme")
         lastLives = engine.lives.current
         lastScore = engine.score
         showCountdown = true
         loadMyBestScore(leaderboardID: "com.example.ColorAttack.Chaos") { score in
-            bestClassicScore = score
+            bestChaosScore = score
         }
     }
 
@@ -357,6 +422,8 @@ struct ChaosModeView_iPad: View {
         }
     }
 }
+
+// MARK: - Preview
 
 #Preview("Chaos Mode iPad") {
     ChaosModeView_iPad(

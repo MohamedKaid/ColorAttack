@@ -140,7 +140,7 @@ struct SequenceModeView_iPad: View {
         // Available width is everything after the left panel and paddings
         let availableW = w * 0.76
         let cardW = (availableW - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
-        let cardH = cardW * 0.65
+        let cardH = cardW * 0.45
 
         let safeGrid = Array(grid.prefix(12))
 

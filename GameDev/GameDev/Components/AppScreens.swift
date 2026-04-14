@@ -14,4 +14,5 @@ enum AppScreen {
     case rapid
     case chaos
     case sequence
+    case frenzy
 }

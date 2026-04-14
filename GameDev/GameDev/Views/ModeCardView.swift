@@ -13,22 +13,31 @@ struct ModeCardView: View {
     var body: some View {
         GeometryReader { geo in
             let cardWidth = geo.size.width
-            let headerHeight = cardWidth * 0.5  // ✅ Dynamic header height
-            let iconSize = cardWidth * 0.17      // ✅ Dynamic icon size
-            let titleSize = cardWidth * 0.1      // ✅ Dynamic title size
-            let ruleSize = cardWidth * 0.05      // ✅ Dynamic rule font size
-            let playSize = cardWidth * 0.07      // ✅ Dynamic play button font size
+            let headerHeight = cardWidth * 0.5
+            let iconSize = cardWidth * 0.17
+            let titleSize = cardWidth * 0.1
+            let ruleSize = cardWidth * 0.05
+            let playSize = cardWidth * 0.07
 
             VStack(spacing: 0) {
                 // Header with Icon
                 ZStack {
-                    LinearGradient(
-                        colors: [mode.color, mode.colorSecondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    // Rainbow gradient for Frenzy, standard gradient for others
+                    if let rainbowColors = mode.rainbowColors {
+                        LinearGradient(
+                            colors: rainbowColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    } else {
+                        LinearGradient(
+                            colors: [mode.color, mode.colorSecondary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
 
-                    // Decorative circles - ✅ Now dynamic
+                    // Decorative circles
                     Circle()
                         .fill(Color.white.opacity(0.1))
                         .frame(width: cardWidth * 0.38, height: cardWidth * 0.38)
@@ -41,12 +50,12 @@ struct ModeCardView: View {
 
                     VStack(spacing: cardWidth * 0.03) {
                         Image(systemName: mode.icon)
-                            .font(.system(size: iconSize, weight: .bold)) // ✅ Dynamic
+                            .font(.system(size: iconSize, weight: .bold))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 2)
 
                         Text(mode.title)
-                            .font(.system(size: titleSize, weight: .black, design: .rounded)) // ✅ Dynamic
+                            .font(.system(size: titleSize, weight: .black, design: .rounded))
                             .foregroundColor(.white)
                             .shadow(color: .black.opacity(0.2), radius: 2, y: 2)
                     }
@@ -59,7 +68,7 @@ struct ModeCardView: View {
                                 showLeaderboard = true
                             } label: {
                                 Image(systemName: "trophy.fill")
-                                    .font(.system(size: cardWidth * 0.054, weight: .bold)) // ✅ Dynamic
+                                    .font(.system(size: cardWidth * 0.054, weight: .bold))
                                     .foregroundColor(.white)
                                     .padding(cardWidth * 0.03)
                                     .background(Circle().fill(Color.black.opacity(0.25)))
@@ -69,25 +78,25 @@ struct ModeCardView: View {
                         Spacer()
                     }
                 }
-                .frame(height: headerHeight) // ✅ Dynamic header height
+                .frame(height: headerHeight)
                 .clipShape(
                     RoundedCorner(radius: 20, corners: [.topLeft, .topRight])
                 )
 
                 // Content
-                VStack(spacing: cardWidth * 0.06) { // ✅ Dynamic spacing
+                VStack(spacing: cardWidth * 0.06) {
 
                     // Rules
-                    VStack(alignment: .leading, spacing: cardWidth * 0.038) { // ✅ Dynamic spacing
+                    VStack(alignment: .leading, spacing: cardWidth * 0.038) {
                         ForEach(Array(mode.rules.enumerated()), id: \.offset) { index, rule in
                             HStack(alignment: .top, spacing: cardWidth * 0.038) {
                                 Image(systemName: mode.ruleIcons[index])
-                                    .font(.system(size: ruleSize, weight: .semibold)) // ✅ Dynamic
+                                    .font(.system(size: ruleSize, weight: .semibold))
                                     .foregroundColor(mode.color)
                                     .frame(width: cardWidth * 0.077)
                                     .padding(.top, 1)
                                 Text(rule)
-                                    .font(.system(size: ruleSize, weight: .medium)) // ✅ Dynamic
+                                    .font(.system(size: ruleSize, weight: .medium))
                                     .foregroundColor(.primary.opacity(0.8))
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -107,26 +116,36 @@ struct ModeCardView: View {
                     }) {
                         HStack {
                             Text("PLAY")
-                                .font(.system(size: playSize, weight: .bold, design: .rounded)) // ✅ Dynamic
+                                .font(.system(size: playSize, weight: .bold, design: .rounded))
                             Image(systemName: "play.fill")
-                                .font(.system(size: playSize * 0.78, weight: .bold)) // ✅ Dynamic
+                                .font(.system(size: playSize * 0.78, weight: .bold))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, cardWidth * 0.054) // ✅ Dynamic
+                        .padding(.vertical, cardWidth * 0.054)
                         .background(
-                            LinearGradient(
-                                colors: [mode.color, mode.colorSecondary],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                            Group {
+                                if let rainbowColors = mode.rainbowColors {
+                                    LinearGradient(
+                                        colors: rainbowColors,
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                } else {
+                                    LinearGradient(
+                                        colors: [mode.color, mode.colorSecondary],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                }
+                            }
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .shadow(color: mode.color.opacity(0.4), radius: 8, y: 4)
                     }
                     .scaleEffect(isPressed ? 0.95 : 1)
                 }
-                .padding(cardWidth * 0.06) // ✅ Dynamic padding
+                .padding(cardWidth * 0.06)
                 .background(Color(.systemBackground))
             }
             .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -211,8 +230,8 @@ struct RoundedCorner: Shape {
     ZStack {
         Color.gray.opacity(0.3).ignoresSafeArea()
         HStack(spacing: 20) {
-            ModeCardView(mode: .classic, isSelected: true) { }
-            ModeCardView(mode: .chaos, isSelected: false) { }
+            ModeCardView(mode: .frenzy, isSelected: true) { }
+            ModeCardView(mode: .classic, isSelected: false) { }
         }
     }
 }

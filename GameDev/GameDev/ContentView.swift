@@ -16,7 +16,11 @@ let colorPool: [GameColor] = [
     GameColor(name: "Purple", color: Color(hex: "A666D9")),
     GameColor(name: "Brown",  color: Color(hex: "996640")),
     GameColor(name: "Black",  color: Color(hex: "26262E")),
-    GameColor(name: "Pink",   color: Color(hex: "F27399"))
+    GameColor(name: "Pink",   color: Color(hex: "F27399")),
+    GameColor(name: "Cyan",   color: Color(hex: "00BCD4")),
+    GameColor(name: "Teal",   color: Color(hex: "009688")),
+    GameColor(name: "Lime",   color: Color(hex: "8BC34A")),
+    GameColor(name: "White",  color: Color(hex: "F0F0F0"))
 ]
 
 struct ContentView: View {
@@ -71,11 +75,11 @@ struct ContentView: View {
             ChaosModeView(
                 currentScreen: $currentScreen,
                 engine: GameEngine(
-                    lives: Lives(max: 5),
+                    lives: Lives(max: 3),
                     colorPool: colorPool,
                     config: ModeConfig(
                         cardsPerGrid: 6,
-                        tapTimeLimit: 2.5,
+                        tapTimeLimit: 2.0,
                         usesLives: true,
                         totalGameTimeLimit: nil,
                         leaderboardID: "com.example.ColorAttack.Chaos"
@@ -85,26 +89,27 @@ struct ContentView: View {
             )
 
         case .sequence:
-            // TODO: Replace leaderboardID with real Game Center ID once created
             SequenceModeView(
                 currentScreen: $currentScreen,
                 engine: GameEngine(
-                    lives: Lives(max: 5),
+                    lives: Lives(max: 3),
                     colorPool: colorPool,
                     config: ModeConfig(
-                        cardsPerGrid: 12,
-                        tapTimeLimit: 999,
+                        cardsPerGrid: 6,
+                        tapTimeLimit: 5.0,
                         usesLives: true,
                         totalGameTimeLimit: nil,
                         leaderboardID: "com.example.ColorAttack.Sequence"
                     ),
-                    rules: nil
+                    rules: SequenceRules()
                 )
+            )
+
+        case .frenzy:
+            FrenzyModeView(
+                currentScreen: $currentScreen,
+                colorPool: colorPool
             )
         }
     }
-}
-
-#Preview {
-    ContentView()
 }

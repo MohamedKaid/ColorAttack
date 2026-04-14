@@ -21,6 +21,14 @@
           "name" : "Classic"
         }
       ],
+      "com.example.ColorAttack.Frenzy" : [
+        {
+          "formatterOverride" : "INTEGER",
+          "locale" : "en-US",
+          "localID" : "com.example.ColorAttack.Frenzy-en-US",
+          "name" : "Frenzy"
+        }
+      ],
       "com.example.ColorAttack.Rapid" : [
         {
           "formatterOverride" : "INTEGER",
@@ -78,9 +86,20 @@
         "referenceName" : "Sequence",
         "scoreRangeEnd" : null,
         "scoreRangeStart" : null,
-        "scoreSortType" : "DESC",
+        "scoreSortType" : "ASC",
         "submissionType" : "BEST_SCORE",
         "vendorIdentifier" : "com.example.ColorAttack.Sequence",
+        "visibility" : "SHOW_FOR_ALL"
+      },
+      {
+        "archived" : false,
+        "defaultFormatter" : "INTEGER",
+        "referenceName" : "Frenzy",
+        "scoreRangeEnd" : null,
+        "scoreRangeStart" : null,
+        "scoreSortType" : "DESC",
+        "submissionType" : "BEST_SCORE",
+        "vendorIdentifier" : "com.example.ColorAttack.Frenzy",
         "visibility" : "SHOW_FOR_ALL"
       }
     ]

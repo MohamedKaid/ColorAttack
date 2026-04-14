@@ -262,6 +262,8 @@ struct ModeSelectionView: View {
             currentScreen = .chaos
         case .sequence:
             currentScreen = .sequence
+        case .frenzy:
+            currentScreen = .frenzy
         }
     }
 }

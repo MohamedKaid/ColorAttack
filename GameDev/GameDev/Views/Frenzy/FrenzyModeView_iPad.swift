@@ -477,7 +477,12 @@ struct FrenzyModeView_iPad: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             withAnimation(.easeOut(duration: 0.2)) { showLifeLostFlash = false }
         }
-        if lives <= 0 { isGameOver = true; stopGame(); submitScoreIfBest() }
+        if lives <= 0 {
+            isGameOver = true
+            stopGame()
+            submitScoreIfBest()
+            NotificationManager.shared.handleGameOver(score: score, mode: .frenzy) // ← add here
+        }
     }
 
     private func showFeedback(text: String, color: Color) {

@@ -387,6 +387,7 @@ struct SequenceModeView_iPhone: View {
                 isGameOver = true
                 engine.stop()
                 submitScore()
+                NotificationManager.shared.handleGameOver(score: score, mode: .sequence)
             }
         }
     }

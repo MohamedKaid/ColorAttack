@@ -510,6 +510,7 @@ struct FrenzyModeView_iPhone: View {
             isGameOver = true
             stopGame()
             submitScoreIfBest()
+            NotificationManager.shared.handleGameOver(score: score, mode: .frenzy) // ← add here
         }
     }
 

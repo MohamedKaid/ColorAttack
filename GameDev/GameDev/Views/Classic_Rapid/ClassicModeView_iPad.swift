@@ -67,6 +67,13 @@ struct ClassicModeView_iPad: View {
         }
         .onChange(of: engine.lives.current) { _, _ in handleLivesChange() }
         .onChange(of: engine.score) { _, _ in handleScoreChange() }
+        .onChange(of: engine.isGameOver) { _, isOver in
+            guard isOver else { return }
+            NotificationManager.shared.handleGameOver(
+                score: engine.score,
+                mode: isRapidMode ? .rapid : .classic
+            )
+        }
         .onAppear { handleAppear() }
         .onDisappear { engine.stop() }
     }

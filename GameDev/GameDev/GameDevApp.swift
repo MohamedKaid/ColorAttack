@@ -7,26 +7,24 @@
 
 import SwiftUI
 import GameKit
+import UserNotifications
 
 @main
 struct GameDevApp: App {
-//    init() {
-//            authenticateGameCenter()
-//        }
+    @Environment(\.scenePhase) private var scenePhase
 
-        var body: some Scene {
-            WindowGroup {
-                ContentView()
-            }
-        }
-
-        private func authenticateGameCenter() {
-            GKLocalPlayer.local.authenticateHandler = { _, error in
-                if let error = error {
-                    print("Game Center auth error:", error.localizedDescription)
-                } else {
-                    print("\(GKLocalPlayer.local.alias) is ready to play!")
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .onAppear {
+                    GameCenterAuth.authenticate()
+                    NotificationManager.shared.requestPermission()
                 }
-            }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active {
+                        NotificationManager.shared.handleAppForeground()
+                    }
+                }
         }
+    }
 }

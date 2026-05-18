@@ -60,7 +60,7 @@ struct ClassicModeView_iPhone: View {
                 overlays
             }
             .sheet(isPresented: $showLeaderboard) {
-                LeaderBoardView(leaderboardID: engine.config.leaderboardID)
+                CustomLeaderboardView(initialMode: isRapidMode ? .rapid : .classic)
                     .presentationDetents([.medium, .large], selection: $leaderboardDetent)
                     .presentationDragIndicator(.visible)
             }

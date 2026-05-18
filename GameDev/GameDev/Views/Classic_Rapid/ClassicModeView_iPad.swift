@@ -61,7 +61,7 @@ struct ClassicModeView_iPad: View {
             .frame(height: 56)
         }
         .sheet(isPresented: $showLeaderboard) {
-            LeaderBoardView(leaderboardID: engine.config.leaderboardID)
+            CustomLeaderboardView(initialMode: isRapidMode ? .rapid : .classic)
                 .presentationDetents([.medium, .large], selection: $leaderboardDetent)
                 .presentationDragIndicator(.visible)
         }

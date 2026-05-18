@@ -173,8 +173,8 @@ struct ModeCardView: View {
                 }
             }
             .sheet(isPresented: $showLeaderboard) {
-                LeaderboardView(leaderboardID: mode.leaderboardID)
-                    .ignoresSafeArea()
+                CustomLeaderboardView(initialMode: mode)
+                    .presentationDragIndicator(.visible)
             }
         }
     }
